@@ -7,9 +7,9 @@
 
 A small utility for generating ND array pyramids using Xarray and Zarr.
 
-![MIT License][]
+[![CI](https://github.com/carbonplan/ndpyramid/actions/workflows/main.yaml/badge.svg)](https://github.com/carbonplan/ndpyramid/actions/workflows/main.yaml)
+![MIT License](https://badgen.net/badge/license/MIT/blue)
 
-[mit license]: https://badgen.net/badge/license/MIT/blue
 
 ## license
 
