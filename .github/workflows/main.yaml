@@ -8,7 +8,7 @@ on:
 
 jobs:
   test:
-    name: ${{ matrix.python-version }}-build
+    name: ${{ matrix.python }}-build
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -1,3 +1,4 @@
 pooch
+netcdf4
 pytest
 -r requirements.txt
