@@ -1,2 +1,3 @@
+pooch
 pytest
 -r requirements.txt
