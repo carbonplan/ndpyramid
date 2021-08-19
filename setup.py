@@ -10,25 +10,25 @@ with open("requirements.txt") as f:
 with open("README.md") as f:
     LONG_DESCRIPTION = f.read()
 
-PYTHON_REQUIRES = ">=3.7"
+PYTHON_REQUIRES = ">=3.8"
 
-description = "carbonplan python project template"
+description = "A small utility for generating ND array pyramids using Xarray and Zarr."
 
 setup(
-    name="carbonplan-python-project-template",
+    name="ndpyramid",
     description=description,
     long_description=LONG_DESCRIPTION,
     long_description_content_type="text/markdown",
-    maintainer="Raphael Hagen",
-    maintainer_email="raphael@carbonplan.org",
-    url="https://github.com/carbonplan/python-project-template",
+    maintainer="Joe Hamman",
+    maintainer_email="joe@carbonplan.org",
+    url="https://github.com/carbonplan/ndpyramid",
     packages=find_packages(),
     include_package_data=True,
     python_requires=PYTHON_REQUIRES,
     install_requires=INSTALL_REQUIRES,
     tests_require=["pytest"],
     license="MIT",
-    keywords="carbon, data, climate",
+    keywords="zarr, xarray, pyramid",
     use_scm_version={"version_scheme": "post-release", "local_scheme": "dirty-tag"},
     setup_requires=["setuptools_scm", "setuptools>=30.3.0"],
 )

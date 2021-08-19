@@ -1,5 +1,3 @@
-carbonplan
-carbonplan[styles]
-intake
+numpy
+xarray
 zarr
-pathlib
