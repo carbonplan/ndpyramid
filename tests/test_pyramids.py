@@ -17,6 +17,6 @@ def test_xarray_coarsened_pyramid(temperature):
 
 
 def test_reprojected_pyramid(temperature):
-    temperature = temperature.rio.set_crs('EPSG:4326')
+    temperature = temperature.rio.write_crs('EPSG:4326')
     pyramid = ReprojectedPyramid(temperature, levels=2)
     pyramid.to_zarr(MemoryStore())
