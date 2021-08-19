@@ -1,1 +1,1 @@
-from .core import XarrayCoarsenPyramid
+from .core import XarrayCoarsenPyramid, ReprojectedPyramid
