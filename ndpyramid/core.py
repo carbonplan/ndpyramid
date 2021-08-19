@@ -36,7 +36,7 @@ class BasePyramid:
     def astype(self, dtype, **kwargs):
         for key, ds in self.pyramid.items():
             self.pyramid[key] = ds.astype(dtype, **kwargs)
-        return self   
+        return self
 
     def chunk(self, **kwargs):
         for key, ds in self.pyramid.items():
@@ -69,15 +69,21 @@ class ReprojectedPyramid(BasePyramid):
     def make_pyramid(self, levels: int = None, pixels_per_tile=128) -> None:
         from rasterio.transform import Affine
         from rasterio.warp import Resampling
-        
+
         self.schema = {}
         self.pyramid = {}
 
         for level in range(levels):
             dim = 2 ** level * pixels_per_tile
-            dst_transform = Affine.translation(-20026376.39, 20048966.10) * Affine.scale((20026376.39*2)/dim, -(20048966.10*2)/dim)
+            dst_transform = Affine.translation(-20026376.39, 20048966.10) * Affine.scale(
+                (20026376.39 * 2) / dim, -(20048966.10 * 2) / dim
+            )
 
             self.pyramid[str(level)] = xr.Dataset(attrs=self.obj.attrs)
             for k, da in self.obj.items():
                 self.pyramid[str(level)][k] = da.rio.reproject(
-                    'EPSG:3857', resampling=Resampling.average, shape=(dim, dim), transform=dst_transform)
+                    'EPSG:3857',
+                    resampling=Resampling.average,
+                    shape=(dim, dim),
+                    transform=dst_transform,
+                )

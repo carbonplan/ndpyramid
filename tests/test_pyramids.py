@@ -2,7 +2,7 @@ import pytest
 import xarray as xr
 from zarr.storage import MemoryStore
 
-from ndpyramid.core import XarrayCoarsenPyramid, ReprojectedPyramid
+from ndpyramid.core import ReprojectedPyramid, XarrayCoarsenPyramid
 
 
 @pytest.fixture
@@ -17,5 +17,6 @@ def test_xarray_coarsened_pyramid(temperature):
 
 
 def test_reprojected_pyramid(temperature):
+    temperature = temperature.rio.set_crs('EPSG:4326')
     pyramid = ReprojectedPyramid(temperature, levels=2)
     pyramid.to_zarr(MemoryStore())
