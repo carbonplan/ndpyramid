@@ -1,3 +1,4 @@
+import importlib
 from typing import List
 
 import datatree as dt
@@ -5,11 +6,14 @@ import xarray as xr
 
 
 def _get_version():
-    # from . import __version__
-    return 'beta'
+    try:
+        return importlib.import_module('ndpyramid').__version__
+    except ModuleNotFoundError:
+        return '-9999'
 
 
 def _multiscales_template(datasets=[], type='', method='', version='', args=[], kwargs={}):
+    # https://forum.image.sc/t/multiscale-arrays-v0-1/37930
     d = [
         {
             "datasets": datasets,
