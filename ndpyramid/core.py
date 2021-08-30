@@ -56,9 +56,7 @@ def pyramid_reproject(ds, levels: int = None, pixels_per_tile=128) -> dt.DataTre
     from rasterio.warp import Resampling
 
     # multiscales spec
-    save_kwargs = locals()
-    del save_kwargs['ds']
-
+    save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
     attrs = {
         'multiscales': _multiscales_template(
             datasets=[{'path': str(i) for i in range(levels)}],
