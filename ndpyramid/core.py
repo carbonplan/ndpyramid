@@ -85,7 +85,7 @@ def pyramid_reproject(ds, levels: int = None, pixels_per_tile=128) -> dt.DataTre
 
         pyramid[lkey] = xr.Dataset(attrs=ds.attrs)
         for k, da in ds.items():
-            pyramid[lkey][k] = da.rio.reproject(
+            pyramid[lkey].ds[k] = da.rio.reproject(
                 'EPSG:3857',
                 resampling=Resampling.average,
                 shape=(dim, dim),
