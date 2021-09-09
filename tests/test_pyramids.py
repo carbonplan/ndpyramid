@@ -8,6 +8,7 @@ from ndpyramid import pyramid_coarsen, pyramid_reproject
 @pytest.fixture
 def temperature():
     ds = xr.tutorial.open_dataset('air_temperature')
+    ds['air'].encoding = {}
     return ds
 
 
