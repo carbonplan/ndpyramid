@@ -54,7 +54,9 @@ def pyramid_coarsen(ds, factors: List[int], dims: List[str], **kwargs) -> dt.Dat
     return pyramid
 
 
-def pyramid_reproject(ds, levels: int = None, pixels_per_tile=128) -> dt.DataTree:
+def pyramid_reproject(
+    ds, levels: int = None, pixels_per_tile=128, resampling='average'
+) -> dt.DataTree:
     import rioxarray
     from rasterio.transform import Affine
     from rasterio.warp import Resampling
@@ -87,7 +89,7 @@ def pyramid_reproject(ds, levels: int = None, pixels_per_tile=128) -> dt.DataTre
         for k, da in ds.items():
             pyramid[lkey].ds[k] = da.rio.reproject(
                 'EPSG:3857',
-                resampling=Resampling.average,
+                resampling=Resampling[resampling],
                 shape=(dim, dim),
                 transform=dst_transform,
             )
