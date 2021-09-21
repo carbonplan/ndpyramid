@@ -55,7 +55,7 @@ def pyramid_coarsen(ds, factors: List[int], dims: List[str], **kwargs) -> dt.Dat
 
 
 def pyramid_reproject(
-    ds, levels: int = None, pixels_per_tile=128, resampling='average'
+    ds, levels: int = None, pixels_per_tile=128, resampling='average', extra_dim=None
 ) -> dt.DataTree:
     import rioxarray  # noqa: F401
     from rasterio.transform import Affine
@@ -85,12 +85,24 @@ def pyramid_reproject(
             (20026376.39 * 2) / dim, -(20048966.10 * 2) / dim
         )
 
-        pyramid[lkey] = xr.Dataset(attrs=ds.attrs)
-        for k, da in ds.items():
-            pyramid[lkey].ds[k] = da.rio.reproject(
+        def reproject(da):
+            return da.rio.reproject(
                 'EPSG:3857',
                 resampling=Resampling[resampling],
                 shape=(dim, dim),
                 transform=dst_transform,
             )
+
+        pyramid[lkey] = xr.Dataset(attrs=ds.attrs)
+        for k, da in ds.items():
+            if len(da.shape) == 4:
+                if extra_dim is None:
+                    raise ValueError("must specify 'extra_dim' to iterate over 4d data")
+                da_all = []
+                for index in ds[extra_dim]:
+                    da_reprojected = reproject(da.sel({extra_dim: index}))
+                    da_all.append(da_reprojected)
+                pyramid[lkey].ds[k] = xr.concat(da_all, ds[extra_dim])
+            else:
+                pyramid[lkey].ds[k] = reproject(da)
     return pyramid
