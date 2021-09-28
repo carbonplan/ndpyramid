@@ -24,7 +24,8 @@ pip install git+git://github.com/carbonplan/ndpyramid
 
 Ndpyramid provides a set of utilites for creating pyramids with standardized metadata.
 The example below demonstrates the usage of the `pyramid_coarsen` and `pyramid_reproject`
-utilities.
+utilities. Check out [this](https://github.com/carbonplan/ndpyramid/blob/main/notebooks/demo.ipynb)
+Jupyter Notebook for a complete demonstration.
 
 ```python
 import xarray as xr
