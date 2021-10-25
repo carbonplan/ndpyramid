@@ -1,4 +1,5 @@
 import importlib
+from collections import defaultdict
 from typing import List
 
 import datatree as dt
@@ -73,6 +74,9 @@ def pyramid_reproject(
         )
     }
 
+    if isinstance(resampling, str):
+        resampling = defaultdict(resampling)
+
     # set up pyramid
     root = xr.Dataset(attrs=attrs)
     pyramid = dt.DataTree(data_objects={"root": root})
@@ -85,10 +89,10 @@ def pyramid_reproject(
             (20026376.39 * 2) / dim, -(20048966.10 * 2) / dim
         )
 
-        def reproject(da):
+        def reproject(da, var):
             return da.rio.reproject(
                 'EPSG:3857',
-                resampling=Resampling[resampling],
+                resampling=Resampling[resampling[var]],
                 shape=(dim, dim),
                 transform=dst_transform,
             )
@@ -100,9 +104,9 @@ def pyramid_reproject(
                     raise ValueError("must specify 'extra_dim' to iterate over 4d data")
                 da_all = []
                 for index in ds[extra_dim]:
-                    da_reprojected = reproject(da.sel({extra_dim: index}))
+                    da_reprojected = reproject(da.sel({extra_dim: index}), k)
                     da_all.append(da_reprojected)
                 pyramid[lkey].ds[k] = xr.concat(da_all, ds[extra_dim])
             else:
-                pyramid[lkey].ds[k] = reproject(da)
+                pyramid[lkey].ds[k] = reproject(da, k)
     return pyramid
