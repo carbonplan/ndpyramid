@@ -75,7 +75,9 @@ def pyramid_reproject(
     }
 
     if isinstance(resampling, str):
-        resampling = defaultdict(lambda: resampling)
+        resampling_dict = defaultdict(lambda: resampling)
+    else:
+        resampling_dict = resampling
 
     # set up pyramid
     root = xr.Dataset(attrs=attrs)
@@ -92,7 +94,7 @@ def pyramid_reproject(
         def reproject(da, var):
             return da.rio.reproject(
                 'EPSG:3857',
-                resampling=Resampling[resampling[var]],
+                resampling=Resampling[resampling_dict[var]],
                 shape=(dim, dim),
                 transform=dst_transform,
             )
