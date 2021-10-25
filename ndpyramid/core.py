@@ -75,7 +75,7 @@ def pyramid_reproject(
     }
 
     if isinstance(resampling, str):
-        resampling = defaultdict(resampling)
+        resampling = defaultdict(lambda: resampling)
 
     # set up pyramid
     root = xr.Dataset(attrs=attrs)
