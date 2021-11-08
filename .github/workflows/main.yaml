@@ -34,7 +34,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r dev-requirements.txt
-          pip install git+git://github.com/TomNicholas/datatree
+          pip install git+git://github.com/TomNicholas/datatree@1035a9aaf53e1c133c6e958260259b9cc0e4d293
       - shell: bash -l {0}
         run: |
           python -m pip install --no-deps -e .

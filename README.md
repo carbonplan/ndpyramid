@@ -16,7 +16,7 @@ This package is in the early stages of development. It also "depends" on a proto
 package `datatree`. Both need to be installed from source.
 
 ```shell
-pip install git+git://github.com/TomNicholas/datatree
+pip install git+git://github.com/TomNicholas/datatree@1035a9aaf53e1c133c6e958260259b9cc0e4d293
 pip install git+git://github.com/carbonplan/ndpyramid
 ```
 
