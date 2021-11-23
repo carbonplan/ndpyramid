@@ -142,7 +142,7 @@ def pyramid_regrid(
 
     attrs = {
         'multiscales': multiscales_template(
-            datasets=[{'path': str(i) for i in range(levels)}],
+            datasets=[{'path': str(i)} for i in range(levels)],
             type='reduce',
             method='pyramid_regrid',
             version=get_version(),
