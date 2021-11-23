@@ -15,7 +15,7 @@ def pyramid_coarsen(ds, factors: List[int], dims: List[str], **kwargs) -> dt.Dat
 
     attrs = {
         'multiscales': multiscales_template(
-            datasets=[{'path': str(i) for i in range(len(factors))}],
+            datasets=[{'path': str(i)} for i in range(len(factors))],
             type='reduce',
             method='pyramid_coarsen',
             version=get_version(),
@@ -48,7 +48,7 @@ def pyramid_reproject(
     save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
     attrs = {
         'multiscales': multiscales_template(
-            datasets=[{'path': str(i) for i in range(levels)}],
+            datasets=[{'path': str(i)} for i in range(levels)],
             type='reduce',
             method='pyramid_reproject',
             version=get_version(),
