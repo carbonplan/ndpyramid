@@ -1,28 +1,10 @@
-import importlib
 from collections import defaultdict
 from typing import List
 
 import datatree as dt
 import xarray as xr
 
-
-def _get_version():
-    try:
-        return importlib.import_module('ndpyramid').__version__
-    except ModuleNotFoundError:
-        return '-9999'
-
-
-def _multiscales_template(datasets=[], type='', method='', version='', args=[], kwargs={}):
-    # https://forum.image.sc/t/multiscale-arrays-v0-1/37930
-    d = [
-        {
-            "datasets": datasets,
-            "type": type,
-            "metadata": {"method": method, "version": version, "args": args, "kwargs": kwargs},
-        }
-    ]
-    return d
+from .utils import get_version, multiscales_template
 
 
 def pyramid_coarsen(ds, factors: List[int], dims: List[str], **kwargs) -> dt.DataTree:
@@ -32,11 +14,11 @@ def pyramid_coarsen(ds, factors: List[int], dims: List[str], **kwargs) -> dt.Dat
     del save_kwargs['ds']
 
     attrs = {
-        'multiscales': _multiscales_template(
+        'multiscales': multiscales_template(
             datasets=[{'path': str(i) for i in range(len(factors))}],
             type='reduce',
             method='pyramid_coarsen',
-            version=_get_version(),
+            version=get_version(),
             kwargs=save_kwargs,
         )
     }
@@ -65,11 +47,11 @@ def pyramid_reproject(
     # multiscales spec
     save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
     attrs = {
-        'multiscales': _multiscales_template(
+        'multiscales': multiscales_template(
             datasets=[{'path': str(i) for i in range(levels)}],
             type='reduce',
             method='pyramid_reproject',
-            version=_get_version(),
+            version=get_version(),
             kwargs=save_kwargs,
         )
     }

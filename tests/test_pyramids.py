@@ -2,7 +2,7 @@ import pytest
 import xarray as xr
 from zarr.storage import MemoryStore
 
-from ndpyramid import pyramid_coarsen, pyramid_reproject
+from ndpyramid import pyramid_coarsen, pyramid_regrid, pyramid_reproject
 
 
 @pytest.fixture
@@ -23,5 +23,12 @@ def test_reprojected_pyramid(temperature):
     rioxarray = pytest.importorskip("rioxarray")  # noqa: F841
     temperature = temperature.rio.write_crs('EPSG:4326')
     pyramid = pyramid_reproject(temperature, levels=2)
+    assert pyramid.ds.attrs['multiscales']
+    pyramid.to_zarr(MemoryStore())
+
+
+def test_regridded_pyramid(temperature):
+    rioxarray = pytest.importorskip("xesmf")  # noqa: F841
+    pyramid = pyramid_regrid(temperature, levels=2)
     assert pyramid.ds.attrs['multiscales']
     pyramid.to_zarr(MemoryStore())
