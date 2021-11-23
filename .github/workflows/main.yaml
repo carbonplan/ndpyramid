@@ -38,7 +38,7 @@ jobs:
           conda list
       - name: Run tests
         run: |
-          python -m pytest --cov=./ --cov-report=xml --verbose
+          python -m pytest --cov=./ --cov-report=xml --verbose ./ndpyramid
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v2.1.0
         with:
