@@ -1,7 +1,8 @@
 from pkg_resources import DistributionNotFound, get_distribution
 
-from .core import pyramid_coarsen, pyramid_reproject
+from .core import pyramid_coarsen
 from .regrid import pyramid_regrid
+from .reproject import pyramid_reproject
 
 try:
     __version__ = get_distribution(__name__).version
