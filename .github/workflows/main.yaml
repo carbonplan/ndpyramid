@@ -19,6 +19,7 @@ jobs:
       - name: Conda setup
         uses: conda-incubator/setup-miniconda@v2
         with:
+          channels: conda-forge
           mamba-version: '*'
           python-version: ${{ matrix.python-version }}
           activate-environment: ndpyramid
