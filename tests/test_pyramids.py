@@ -32,7 +32,7 @@ def test_reprojected_pyramid(temperature):
 
 
 def test_regridded_pyramid(temperature):
-    rioxarray = pytest.importorskip("xesmf")  # noqa: F841
+    # rioxarray = pytest.importorskip("xesmf")  # noqa: F841
     pyramid = pyramid_regrid(temperature, levels=2)
     assert pyramid.ds.attrs['multiscales']
     pyramid.to_zarr(MemoryStore())

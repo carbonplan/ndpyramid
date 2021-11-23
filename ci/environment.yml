@@ -3,17 +3,20 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - numpy
-  - xarray
-  - zarr
-  - pooch
+  - esmpy=8.0.0
+  - dask
   - netcdf4
+  - numpy
+  - pooch
   - pytest
   - pytest-cov
   - pytest-mypy
   - rasterio
   - rioxarray
+  - scipy
+  - xarray
   - xesmf
+  - zarr
   - pip
   - pip:
       - git+git://github.com/TomNicholas/datatree@1035a9aaf53e1c133c6e958260259b9cc0e4d293
