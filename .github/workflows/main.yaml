@@ -22,12 +22,12 @@ jobs:
           channels: conda-forge
           mamba-version: '*'
           python-version: ${{ matrix.python-version }}
+          environment-file: ci/environment.yml
           activate-environment: ndpyramid
           auto-activate-base: false
 
       - name: Set up conda environment
         run: |
-          mamba env update -f ci/environment.yml
           python -m pip install --no-deps -e .
       - name: Conda list information
         run: |
