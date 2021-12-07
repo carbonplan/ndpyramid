@@ -31,16 +31,15 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
     from pyproj import Proj
     from rasterio.transform import Affine
 
-    dim = 2 ** level * pixels_per_tile
-
-    grid_shape = (dim, dim)
-    bounds_shape = (dim + 1, dim + 1)
+    p = Proj('EPSG:3857')
+    dim = (2 ** level) * pixels_per_tile
 
     transform = Affine.translation(-20026376.39, 20048966.10) * Affine.scale(
         (20026376.39 * 2) / dim, -(20048966.10 * 2) / dim
     )
 
-    p = Proj('EPSG:3857')
+    grid_shape = (dim, dim)
+    bounds_shape = (dim + 1, dim + 1)
 
     xs = np.empty(grid_shape)
     ys = np.empty(grid_shape)
@@ -48,19 +47,24 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
     lon = np.empty(grid_shape)
     lat_b = np.zeros(bounds_shape)
     lon_b = np.zeros(bounds_shape)
+
+    # calc grid cell center coordinates
+    ii, jj = np.meshgrid(np.arange(dim) + 0.5, np.arange(dim) + 0.5)
+    for i in range(grid_shape[0]):
+        for j in range(grid_shape[1]):
+            locs = [jj[i, j], ii[i, j]]
+            xs[i, j], ys[i, j] = transform * locs
+            lon[i, j], lat[i, j] = p(xs[i, j], ys[i, j], inverse=True)
+
+    # calc grid cell bounds
+    iib, jjb = np.meshgrid(np.arange(dim + 1), np.arange(dim + 1))
     for i in range(bounds_shape[0]):
         for j in range(bounds_shape[1]):
-            if i < grid_shape[0] and j < grid_shape[1]:
-                x, y = transform * [j, i]
-                xs[i, j] = x
-                ys[i, j] = y
-                lonlat = p(x, y, inverse=True)
-                lon[i, j] = lonlat[0]
-                lat[i, j] = lonlat[1]
-            lonlat = p(*(transform * [j - 0.5, i - 0.5]), inverse=True)
-            lon_b[i, j] = lonlat[0]
-            lat_b[i, j] = lonlat[1]
+            locs = [jjb[i, j], iib[i, j]]
+            x, y = transform * locs
+            lon_b[i, j], lat_b[i, j] = p(x, y, inverse=True)
 
+    # pack data into xarray.Dataset
     ds = xr.Dataset(
         {
             'x': xr.DataArray(xs[0, :], dims=['x']),

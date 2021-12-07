@@ -1,8 +1,10 @@
+import numpy as np
 import pytest
 import xarray as xr
 from zarr.storage import MemoryStore
 
 from ndpyramid import pyramid_coarsen, pyramid_regrid, pyramid_reproject
+from ndpyramid.regrid import make_grid_ds
 
 
 @pytest.fixture
@@ -36,3 +38,10 @@ def test_regridded_pyramid(temperature):
     pyramid = pyramid_regrid(temperature, levels=2)
     assert pyramid.ds.attrs['multiscales']
     pyramid.to_zarr(MemoryStore())
+
+
+def test_make_grid_ds():
+
+    grid = make_grid_ds(0, pixels_per_tile=8)
+    lon_vals = grid.lon_b.values
+    assert np.all((lon_vals[-1, :] + lon_vals[0, :]) < 0.001)
