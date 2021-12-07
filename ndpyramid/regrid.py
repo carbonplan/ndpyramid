@@ -52,7 +52,7 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
     ii, jj = np.meshgrid(np.arange(dim) + 0.5, np.arange(dim) + 0.5)
     for i in range(grid_shape[0]):
         for j in range(grid_shape[1]):
-            locs = [jj[i, j], ii[i, j]]
+            locs = [ii[i, j], jj[i, j]]
             xs[i, j], ys[i, j] = transform * locs
             lon[i, j], lat[i, j] = p(xs[i, j], ys[i, j], inverse=True)
 
@@ -60,7 +60,7 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
     iib, jjb = np.meshgrid(np.arange(dim + 1), np.arange(dim + 1))
     for i in range(bounds_shape[0]):
         for j in range(bounds_shape[1]):
-            locs = [jjb[i, j], iib[i, j]]
+            locs = [iib[i, j], jjb[i, j]]
             x, y = transform * locs
             lon_b[i, j], lat_b[i, j] = p(x, y, inverse=True)
 
