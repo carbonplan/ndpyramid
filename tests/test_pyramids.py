@@ -44,4 +44,4 @@ def test_make_grid_ds():
 
     grid = make_grid_ds(0, pixels_per_tile=8)
     lon_vals = grid.lon_b.values
-    assert np.all((lon_vals[-1, :] + lon_vals[0, :]) < 0.001)
+    assert np.all((lon_vals[-1, :] - lon_vals[0, :]) < 0.001)
