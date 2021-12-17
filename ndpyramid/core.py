@@ -24,7 +24,7 @@ def pyramid_coarsen(ds, factors: List[int], dims: List[str], **kwargs) -> dt.Dat
 
     # set up pyramid
     root = xr.Dataset(attrs=attrs)
-    pyramid = dt.DataTree(data_objects={"root": root})
+    pyramid = dt.DataTree(data=root, name='root')
 
     # pyramid data
     for key, factor in enumerate(factors):

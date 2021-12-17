@@ -156,7 +156,7 @@ def pyramid_regrid(
 
     # set up pyramid
     root = xr.Dataset(attrs=attrs)
-    pyramid = dt.DataTree(data_objects={"root": root})
+    pyramid = dt.DataTree(data=root, name='root')
 
     # pyramid data
     for level in range(levels):
