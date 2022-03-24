@@ -18,5 +18,6 @@ dependencies:
   - xesmf
   - zarr
   - pip
+  - mpich
   - pip:
       - git+https://github.com/xarray-contrib/datatree.git@54edbf77fdc756b74bfca00986f4a68e04643b29
