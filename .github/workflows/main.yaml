@@ -2,32 +2,35 @@ name: CI
 
 on:
   push:
-    branches: "*"
+    branches:
+      - main
   pull_request:
-    branches: "*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
     name: ${{ matrix.python }}-build
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python: [3.8, 3.9]
+        python: ['3.8', '3.9', '3.10']
     timeout-minutes: 20
     defaults:
       run:
         shell: bash -l {0}
     steps:
       - uses: actions/checkout@v3
-      - name: Conda setup
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Install Conda environment from environment.yml
+        uses: mamba-org/provision-with-micromamba@main
         with:
-          channels: conda-forge
-          mamba-version: '*'
-          python-version: ${{ matrix.python-version }}
           environment-file: ci/environment.yml
-          activate-environment: ndpyramid
-          auto-activate-base: false
+          cache-downloads: true
+          extra-specs: |
+            python=${{ matrix.python-version }}
 
       - name: Set up conda environment
         run: |
