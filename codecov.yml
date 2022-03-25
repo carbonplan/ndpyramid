@@ -16,5 +16,5 @@ coverage:
       default:
         target: 95
         informational: true
-    patch: false
-    changes: false
+    patch: true
+    changes: true
