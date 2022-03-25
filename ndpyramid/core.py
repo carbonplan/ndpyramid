@@ -1,7 +1,5 @@
 from __future__ import annotations  # noqa: F401
 
-from collections import defaultdict
-
 import datatree as dt
 import xarray as xr
 

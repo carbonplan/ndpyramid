@@ -34,13 +34,13 @@ def test_reprojected_pyramid(temperature):
 
 
 def test_reprojected_pyramid_dask(temperature):
-    rioxarray = pytest.importorskip("rioxarray")  # noqa: F841
+    rioxarray = pytest.importorskip('rioxarray')  # noqa: F841
     levels = 2
     temperature = temperature.rio.write_crs('EPSG:4326')
     print(temperature)
     pyramid = pyramid_reproject(temperature.chunk({'time': 1}), levels=2)
     for child in pyramid.children:
-        child.ds = child.ds.chunk({"x": 128, "y": 128})
+        child.ds = child.ds.chunk({'x': 128, 'y': 128})
     print(pyramid['0'].ds)
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels

@@ -1,7 +1,7 @@
 from __future__ import annotations  # noqa: F401
 
 from collections import defaultdict
-from typing import Dict, Tuple, TypeVar
+from typing import Dict, TypeVar
 
 import dask
 import datatree as dt
@@ -86,12 +86,12 @@ def pyramid_reproject(
     from rasterio.transform import Affine
 
     # multiscales spec
-    save_kwargs = {"levels": levels, "pixels_per_tile": pixels_per_tile}
+    save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
     attrs = {
-        "multiscales": multiscales_template(
-            datasets=[{"path": str(i)} for i in range(levels)],
-            type="reduce",
-            method="pyramid_reproject",
+        'multiscales': multiscales_template(
+            datasets=[{'path': str(i)} for i in range(levels)],
+            type='reduce',
+            method='pyramid_reproject',
             version=get_version(),
             kwargs=save_kwargs,
         )
