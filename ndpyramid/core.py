@@ -69,7 +69,7 @@ def pyramid_reproject(
     # pyramid data
     for level in range(levels):
         lkey = str(level)
-        dim = 2 ** level * pixels_per_tile
+        dim = 2**level * pixels_per_tile
         dst_transform = Affine.translation(-20026376.39, 20048966.10) * Affine.scale(
             (20026376.39 * 2) / dim, -(20048966.10 * 2) / dim
         )

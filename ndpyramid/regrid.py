@@ -34,7 +34,7 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
     from rasterio.transform import Affine
 
     p = Proj('EPSG:3857')
-    dim = (2 ** level) * pixels_per_tile
+    dim = (2**level) * pixels_per_tile
 
     transform = Affine.translation(-20026376.39, 20048966.10) * Affine.scale(
         (20026376.39 * 2) / dim, -(20048966.10 * 2) / dim
