@@ -109,6 +109,7 @@ def pyramid_regrid(
     levels: int = None,
     weights_template: str = None,
     method: str = 'bilinear',
+    regridder_kws: dict = None,
 ) -> dt.DataTree:
     """Make a pyramid using xesmf's regridders
 
@@ -124,6 +125,8 @@ def pyramid_regrid(
         Filepath to write generated weights to, e.g. `'weights_{level}'`, by default None
     method : str, optional
         Regridding method. See ``xesmf.Regridder`` for valid options, by default 'bilinear'
+    regridder_kws : dict
+        Keyword arguments to pass to regridder. Default is `{'periodic': True}`
 
     Returns
     -------
@@ -139,6 +142,9 @@ def pyramid_regrid(
             raise ValueError('must either provide a target_pyramid or number of levels')
     if levels is None:
         levels = len(target_pyramid.keys())  # TODO: get levels from the pyramid metadata
+
+    if regridder_kws is None:
+        regridder_kws = {'periodic': True}
 
     # multiscales spec
     save_kwargs = locals()
@@ -166,14 +172,14 @@ def pyramid_regrid(
 
         # get the regridder object
         if not weights_template:
-            regridder = xe.Regridder(ds, grid, method)
+            regridder = xe.Regridder(ds, grid, method, **regridder_kws)
         else:
             fn = pathlib.PosixPath(weights_template.format(level=level))
             if not fn.exists():
-                regridder = xe.Regridder(ds, grid, method)
+                regridder = xe.Regridder(ds, grid, method, **regridder_kws)
                 regridder.to_netcdf(filename=fn)
             else:
-                regridder = xe.Regridder(ds, grid, method, weights=fn)
+                regridder = xe.Regridder(ds, grid, method, weights=fn, **regridder_kws)
 
         # regrid
         pyramid[str(level)] = regridder(ds)
