@@ -1,5 +1,6 @@
+from __future__ import annotations  # noqa: F401
+
 from collections import defaultdict
-from typing import List
 
 import datatree as dt
 import xarray as xr
@@ -7,7 +8,7 @@ import xarray as xr
 from .utils import get_version, multiscales_template
 
 
-def pyramid_coarsen(ds, factors: List[int], dims: List[str], **kwargs) -> dt.DataTree:
+def pyramid_coarsen(ds, factors: list[int], dims: list[str], **kwargs) -> dt.DataTree:
 
     # multiscales spec
     save_kwargs = locals()
@@ -68,7 +69,7 @@ def pyramid_reproject(
     # pyramid data
     for level in range(levels):
         lkey = str(level)
-        dim = 2 ** level * pixels_per_tile
+        dim = 2**level * pixels_per_tile
         dst_transform = Affine.translation(-20026376.39, 20048966.10) * Affine.scale(
             (20026376.39 * 2) / dim, -(20048966.10 * 2) / dim
         )
