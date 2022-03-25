@@ -1,3 +1,5 @@
+from __future__ import annotations  # noqa: F401
+
 import importlib
 
 
@@ -12,9 +14,9 @@ def multiscales_template(datasets=[], type='', method='', version='', args=[], k
     # https://forum.image.sc/t/multiscale-arrays-v0-1/37930
     d = [
         {
-            "datasets": datasets,
-            "type": type,
-            "metadata": {"method": method, "version": version, "args": args, "kwargs": kwargs},
+            'datasets': datasets,
+            'type': type,
+            'metadata': {'method': method, 'version': version, 'args': args, 'kwargs': kwargs},
         }
     ]
     return d

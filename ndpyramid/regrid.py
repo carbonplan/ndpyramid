@@ -1,3 +1,5 @@
+from __future__ import annotations  # noqa: F401
+
 import pathlib
 
 import datatree as dt
