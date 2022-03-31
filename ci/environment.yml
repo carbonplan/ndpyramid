@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - esmpy=8.0.0
+  - esmpy>=8.2.0
   - dask
   - netcdf4
   - numpy
