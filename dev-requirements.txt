@@ -1,6 +1,0 @@
-pooch
-netcdf4
-pytest
-rasterio
-rioxarray
--r requirements.txt
