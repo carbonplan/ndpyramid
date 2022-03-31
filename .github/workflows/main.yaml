@@ -34,7 +34,6 @@ jobs:
 
       - name: Set up conda environment
         run: |
-          pip install xarray-datatree
           python -m pip install --no-deps -e .
       - name: Conda list information
         run: |
