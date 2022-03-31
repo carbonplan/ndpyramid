@@ -35,8 +35,10 @@ def test_reprojected_pyramid(temperature):
 
 def test_regridded_pyramid(temperature):
     xesmf = pytest.importorskip('xesmf')  # noqa: F841
-    pyramid = pyramid_regrid(temperature, levels=2)
+    pyramid = pyramid_regrid(temperature, levels=2, regridder_apply_kws={'keep_attrs': True})
     assert pyramid.ds.attrs['multiscales']
+    assert pyramid['0'].ds.air.attrs == temperature['air'].attrs
+    assert pyramid['1'].ds.air.attrs == temperature['air'].attrs
     pyramid.to_zarr(MemoryStore())
 
 
