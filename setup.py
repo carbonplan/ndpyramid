@@ -11,7 +11,7 @@ with open('requirements.txt') as f:
     INSTALL_REQUIRES = f.read().strip().split('\n')
 
 LONG_DESCRIPTION = pathlib.Path('README.md').read_text()
-PYTHON_REQUIRES = '>=3.8'
+PYTHON_REQUIRES = '>=3.9'
 
 description = 'A small utility for generating ND array pyramids using Xarray and Zarr.'
 
