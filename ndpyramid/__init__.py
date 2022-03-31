@@ -1,10 +1,5 @@
-from pkg_resources import DistributionNotFound, get_distribution
+# flake8: noqa
 
+from ._version import __version__
 from .core import pyramid_coarsen, pyramid_reproject
 from .regrid import pyramid_regrid
-
-try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:  # noqa: F401; pragma: no cover
-    # package is not installed
-    __version__ = '-9999'

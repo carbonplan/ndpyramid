@@ -12,6 +12,7 @@ concurrency:
 
 jobs:
   test:
+    if: github.repository == 'carbonplan/ndpyramid'
     name: ${{ matrix.python-version }}-build
     runs-on: ubuntu-latest
     strategy:
