@@ -12,12 +12,12 @@ concurrency:
 
 jobs:
   test:
-    name: ${{ matrix.python }}-build
+    name: ${{ matrix.python-version }}-build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python: ['3.8', '3.9', '3.10']
+        python-version: ['3.9', '3.10']
     timeout-minutes: 20
     defaults:
       run:
@@ -32,10 +32,9 @@ jobs:
           extra-specs: |
             python=${{ matrix.python-version }}
 
-      - name: Set up conda environment
+      - name: Install package
         run: |
-          pip install xarray-datatree
-          python -m pip install --no-deps -e .
+          python -m pip install -e . --no-deps
       - name: Conda list information
         run: |
           conda env list
