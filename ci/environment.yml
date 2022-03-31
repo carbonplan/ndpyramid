@@ -19,3 +19,5 @@ dependencies:
   - zarr
   - pip
   - mpich
+  - pip:
+      - xarray-datatree==0.0.3
