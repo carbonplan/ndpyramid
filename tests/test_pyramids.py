@@ -34,12 +34,11 @@ def test_reprojected_pyramid(temperature):
 
 
 @pytest.importorskip('xesmf')
-@pytest.mark.parametrize(
-    'keep_attrs, expected_attrs', [(True, temperature['air'].attrs), (False, {})]
-)
-def test_regridded_pyramid(temperature, keep_attrs, expected_attrs):
+@pytest.mark.parametrize('keep_attrs', [True, False])
+def test_regridded_pyramid(temperature, keep_attrs):
     pyramid = pyramid_regrid(temperature, levels=2, regridder_apply_kws={'keep_attrs': keep_attrs})
     assert pyramid.ds.attrs['multiscales']
+    expected_attrs = temperature['air'].attrs if keep_attrs else {}
     assert pyramid['0'].ds.air.attrs == expected_attrs
     assert pyramid['1'].ds.air.attrs == expected_attrs
     pyramid.to_zarr(MemoryStore())
