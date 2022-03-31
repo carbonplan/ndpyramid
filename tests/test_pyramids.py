@@ -23,7 +23,7 @@ def test_xarray_coarsened_pyramid(temperature):
 
 
 def test_reprojected_pyramid(temperature):
-    rioxarray = pytest.importorskip('rioxarray')  # noqa: F841
+    pytest.importorskip('rioxarray')
     levels = 2
     temperature = temperature.rio.write_crs('EPSG:4326')
     pyramid = pyramid_reproject(temperature, levels=2)
@@ -32,9 +32,9 @@ def test_reprojected_pyramid(temperature):
     pyramid.to_zarr(MemoryStore())
 
 
-@pytest.importorskip('xesmf')
 @pytest.mark.parametrize('keep_attrs', [True, False])
 def test_regridded_pyramid(temperature, keep_attrs):
+    pytest.importorskip('xesmf')
     pyramid = pyramid_regrid(temperature, levels=2, regridder_apply_kws={'keep_attrs': keep_attrs})
     assert pyramid.ds.attrs['multiscales']
     expected_attrs = temperature['air'].attrs if keep_attrs else {}
