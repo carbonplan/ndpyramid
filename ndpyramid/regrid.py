@@ -100,8 +100,6 @@ def make_grid_pyramid(levels: int = 6) -> dt.DataTree:
         data[str(level)] = make_grid_ds(level).chunk(-1)
     return data
 
-    # data.to_zarr('gs://carbonplan-scratch/grids/epsg:3857/', consolidated=True)
-
 
 def pyramid_regrid(
     ds: xr.Dataset,
@@ -110,6 +108,7 @@ def pyramid_regrid(
     weights_template: str = None,
     method: str = 'bilinear',
     regridder_kws: dict = None,
+    regridder_apply_kws: dict = None,
 ) -> dt.DataTree:
     """Make a pyramid using xesmf's regridders
 
@@ -124,9 +123,12 @@ def pyramid_regrid(
     weights_template : str, optional
         Filepath to write generated weights to, e.g. `'weights_{level}'`, by default None
     method : str, optional
-        Regridding method. See ``xesmf.Regridder`` for valid options, by default 'bilinear'
+        Regridding method. See :py:class:`~xesmf.Regridder` for valid options, by default 'bilinear'
     regridder_kws : dict
         Keyword arguments to pass to regridder. Default is `{'periodic': True}`
+    regridder_apply_kws : dict
+        Keyword arguments such as `keep_attrs`, `skipna`, `na_thres`
+        to pass to :py:meth:`~xesmf.Regridder.__call__`. Default is None
 
     Returns
     -------
@@ -182,6 +184,8 @@ def pyramid_regrid(
                 regridder = xe.Regridder(ds, grid, method, weights=fn, **regridder_kws)
 
         # regrid
-        pyramid[str(level)] = regridder(ds)
+        if regridder_apply_kws is None:
+            regridder_apply_kws = {}
+        pyramid[str(level)] = regridder(ds, **regridder_apply_kws)
 
     return pyramid
