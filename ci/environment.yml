@@ -20,4 +20,4 @@ dependencies:
   - pip
   - mpich
   - pip:
-      - xarray-datatree==0.0.3
+      - xarray-datatree
