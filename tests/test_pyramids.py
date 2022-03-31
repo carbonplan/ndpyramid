@@ -15,7 +15,6 @@ def temperature():
 
 
 def test_xarray_coarsened_pyramid(temperature):
-    print(temperature)
     factors = [4, 2, 1]
     pyramid = pyramid_coarsen(temperature, dims=('lat', 'lon'), factors=factors, boundary='trim')
     assert pyramid.ds.attrs['multiscales']
@@ -24,7 +23,7 @@ def test_xarray_coarsened_pyramid(temperature):
 
 
 def test_reprojected_pyramid(temperature):
-    rioxarray = pytest.importorskip('rioxarray')  # noqa: F841
+    pytest.importorskip('rioxarray')
     levels = 2
     temperature = temperature.rio.write_crs('EPSG:4326')
     pyramid = pyramid_reproject(temperature, levels=2)
@@ -33,10 +32,18 @@ def test_reprojected_pyramid(temperature):
     pyramid.to_zarr(MemoryStore())
 
 
-def test_regridded_pyramid(temperature):
-    xesmf = pytest.importorskip('xesmf')  # noqa: F841
-    pyramid = pyramid_regrid(temperature, levels=2)
+@pytest.mark.parametrize('regridder_apply_kws', [None, {'keep_attrs': True}])
+def test_regridded_pyramid(temperature, regridder_apply_kws):
+    pytest.importorskip('xesmf')
+    pyramid = pyramid_regrid(temperature, levels=2, regridder_apply_kws=regridder_apply_kws)
     assert pyramid.ds.attrs['multiscales']
+    expected_attrs = (
+        temperature['air'].attrs
+        if regridder_apply_kws is not None and regridder_apply_kws['keep_attrs']
+        else {}
+    )
+    assert pyramid['0'].ds.air.attrs == expected_attrs
+    assert pyramid['1'].ds.air.attrs == expected_attrs
     pyramid.to_zarr(MemoryStore())
 
 
