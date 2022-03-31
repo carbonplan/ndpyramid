@@ -12,12 +12,8 @@ A small utility for generating ND array pyramids using Xarray and Zarr.
 
 # installation
 
-This package is in the early stages of development. It also "depends" on a prototype data structure
-package `datatree`. Both need to be installed from source.
-
 ```shell
-pip install git+git://github.com/TomNicholas/datatree@54edbf77fdc756b74bfca00986f4a68e04643b29
-pip install git+git://github.com/carbonplan/ndpyramid
+pip install ndpyramid
 ```
 
 # usage
