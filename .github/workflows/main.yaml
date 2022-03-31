@@ -34,7 +34,7 @@ jobs:
 
       - name: Install package
         run: |
-          python -m pip install -e . --no-cache-dir
+          python -m pip install -e . --no-deps
       - name: Conda list information
         run: |
           conda env list
