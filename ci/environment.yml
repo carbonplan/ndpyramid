@@ -19,5 +19,3 @@ dependencies:
   - zarr
   - pip
   - mpich
-  - pip:
-      - xarray-datatree
