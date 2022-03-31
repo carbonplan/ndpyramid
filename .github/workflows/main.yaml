@@ -12,7 +12,7 @@ concurrency:
 
 jobs:
   test:
-    name: ${{ matrix.python }}-build
+    name: ${{ matrix.python-version }}-build
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
