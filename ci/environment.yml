@@ -3,10 +3,12 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - esmpy>=8.2.0
   - dask
+  - esmpy>=8.2.0
+  - mpich
   - netcdf4
   - numpy
+  - pip
   - pooch
   - pytest
   - pytest-cov
@@ -15,9 +17,6 @@ dependencies:
   - rioxarray
   - scipy
   - xarray
+  - xarray-datatree>=0.0.4
   - xesmf
   - zarr
-  - pip
-  - mpich
-  - pip:
-      - xarray-datatree==0.0.3
