@@ -1,5 +1,6 @@
 from __future__ import annotations  # noqa: F401
 
+import itertools
 import pathlib
 
 import datatree as dt
@@ -52,22 +53,19 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
 
     # calc grid cell center coordinates
     ii, jj = np.meshgrid(np.arange(dim) + 0.5, np.arange(dim) + 0.5)
-    for i in range(grid_shape[0]):
-        for j in range(grid_shape[1]):
-            locs = [ii[i, j], jj[i, j]]
-            xs[i, j], ys[i, j] = transform * locs
-            lon[i, j], lat[i, j] = p(xs[i, j], ys[i, j], inverse=True)
+    for i, j in itertools.product(range(grid_shape[0]), range(grid_shape[1])):
+        locs = [ii[i, j], jj[i, j]]
+        xs[i, j], ys[i, j] = transform * locs
+        lon[i, j], lat[i, j] = p(xs[i, j], ys[i, j], inverse=True)
 
     # calc grid cell bounds
     iib, jjb = np.meshgrid(np.arange(dim + 1), np.arange(dim + 1))
-    for i in range(bounds_shape[0]):
-        for j in range(bounds_shape[1]):
-            locs = [iib[i, j], jjb[i, j]]
-            x, y = transform * locs
-            lon_b[i, j], lat_b[i, j] = p(x, y, inverse=True)
+    for i, j in itertools.product(range(bounds_shape[0]), range(bounds_shape[1])):
+        locs = [iib[i, j], jjb[i, j]]
+        x, y = transform * locs
+        lon_b[i, j], lat_b[i, j] = p(x, y, inverse=True)
 
-    # pack data into xarray.Dataset
-    ds = xr.Dataset(
+    return xr.Dataset(
         {
             'x': xr.DataArray(xs[0, :], dims=['x']),
             'y': xr.DataArray(ys[:, 0], dims=['y']),
@@ -78,8 +76,6 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
         },
         attrs=dict(title='Web Mercator Grid', Convensions='CF-1.8'),
     )
-
-    return ds
 
 
 def make_grid_pyramid(levels: int = 6) -> dt.DataTree:
