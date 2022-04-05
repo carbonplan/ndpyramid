@@ -11,7 +11,7 @@ from .utils import _add_metadata_and_zarr_encoding, get_version, multiscales_tem
 def pyramid_coarsen(
     ds: xr.Dataset, *, factors: list[int], dims: list[str], **kwargs
 ) -> dt.DataTree:
-    """Coarsen a dataset by a given factor.
+    """Create a multiscale pyramid via coarsening of a dataset by given factors
 
     Parameters
     ----------
@@ -59,10 +59,10 @@ def pyramid_reproject(
     levels: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
-    resampling='average',
-    extra_dim=None,
+    resampling: str | dict = 'average',
+    extra_dim: str = None,
 ) -> dt.DataTree:
-    """Create a multiscale pyramid of a dataset.
+    """Create a multiscale pyramid of a dataset via reprojection.
 
     Parameters
     ----------
@@ -76,7 +76,8 @@ def pyramid_reproject(
     other_chunks : dict
         Chunks for non-spatial dims to pass to :py:meth:`~xr.Dataset.chunk`. Default is None
     resampling : str or dict, optional
-        Resampling method to use. Default is 'average'.
+        Rasterio warp resampling method to use. Default is 'average'.
+        If a dict, keys are variable names and values are warp resampling methods.
     extra_dim : str, optional
         The name of the extra dimension to iterate over. Default is None.
 

@@ -110,7 +110,7 @@ def set_zarr_encoding(
 
 
 def _add_metadata_and_zarr_encoding(
-    dt: dt.DataTree, *, levels: int, other_chunks: dict = None, pixels_per_tile: int = 128
+    dta: dt.DataTree, *, levels: int, other_chunks: dict = None, pixels_per_tile: int = 128
 ) -> dt.DataTree:
 
     '''Postprocess data pyramid. Adds multiscales metadata and sets Zarr encoding
@@ -137,21 +137,21 @@ def _add_metadata_and_zarr_encoding(
 
     for level in range(levels):
         slevel = str(level)
-        dt.ds.attrs['multiscales'][0]['datasets'][level]['pixels_per_tile'] = pixels_per_tile
+        dta.ds.attrs['multiscales'][0]['datasets'][level]['pixels_per_tile'] = pixels_per_tile
 
         # set dataset chunks
-        dt[slevel].ds = dt[slevel].ds.chunk(chunks)
-        if 'date_str' in dt[slevel].ds:
-            dt[slevel].ds['date_str'] = dt[slevel].ds['date_str'].chunk(-1)
+        dta[slevel].ds = dta[slevel].ds.chunk(chunks)
+        if 'date_str' in dta[slevel].ds:
+            dta[slevel].ds['date_str'] = dta[slevel].ds['date_str'].chunk(-1)
 
         # set dataset encoding
         dt[slevel].ds = set_zarr_encoding(
-            dt[slevel].ds, codec_config={'id': 'zlib', 'level': 1}, float_dtype='float32'
+            dta[slevel].ds, codec_config={'id': 'zlib', 'level': 1}, float_dtype='float32'
         )
         for var in ['time', 'time_bnds']:
-            if var in dt[slevel].ds:
-                dt[slevel].ds[var].encoding['dtype'] = 'int32'
+            if var in dta[slevel].ds:
+                dta[slevel].ds[var].encoding['dtype'] = 'int32'
 
     # set global metadata
-    dt.ds.attrs.update({'title': 'multiscale data pyramid', 'ndpyramid_version': __version__})
-    return dt
+    dta.ds.attrs.update({'title': 'multiscale data pyramid', 'version': __version__})
+    return dta
