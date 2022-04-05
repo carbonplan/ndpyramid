@@ -9,7 +9,7 @@ import ndpyramid
 def test_multiscales_template(datasets, type, method, version, args, kwargs):
     template = ndpyramid.utils.multiscales_template(
         datasets=datasets, type=type, method=method, version=version, args=args, kwargs=kwargs
-    )
+    )[0]
     if not kwargs:
         assert template['metadata']['kwargs'] == {}
     if not datasets:
