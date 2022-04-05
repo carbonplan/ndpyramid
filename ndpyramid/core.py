@@ -5,10 +5,25 @@ from collections import defaultdict
 import datatree as dt
 import xarray as xr
 
-from .utils import get_version, multiscales_template
+from .utils import _add_metadata_and_zarr_encoding, get_version, multiscales_template
 
 
-def pyramid_coarsen(ds, factors: list[int], dims: list[str], **kwargs) -> dt.DataTree:
+def pyramid_coarsen(
+    ds: xr.Dataset, *, factors: list[int], dims: list[str], **kwargs
+) -> dt.DataTree:
+    """Coarsen a dataset by a given factor.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset to coarsen.
+    factors : list[int]
+        The factors to coarsen by.
+    dims : list[str]
+        The dimensions to coarsen.
+    kwargs : dict
+        Additional keyword arguments to pass to xarray.Dataset.coarsen.
+    """
 
     # multiscales spec
     save_kwargs = locals()
@@ -39,8 +54,38 @@ def pyramid_coarsen(ds, factors: list[int], dims: list[str], **kwargs) -> dt.Dat
 
 
 def pyramid_reproject(
-    ds, levels: int = None, pixels_per_tile=128, resampling='average', extra_dim=None
+    ds: xr.Dataset,
+    *,
+    levels: int = None,
+    pixels_per_tile: int = 128,
+    other_chunks: dict = None,
+    resampling='average',
+    extra_dim=None,
 ) -> dt.DataTree:
+    """Create a multiscale pyramid of a dataset.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset to create a multiscale pyramid of.
+    levels : int, optional
+        The number of levels to create. If None, the number of levels is
+        determined by the number of tiles in the dataset.
+    pixels_per_tile : int, optional
+        Number of pixels per tile, by default 128
+    other_chunks : dict
+        Chunks for non-spatial dims to pass to :py:meth:`~xr.Dataset.chunk`. Default is None
+    resampling : str or dict, optional
+        Resampling method to use. Default is 'average'.
+    extra_dim : str, optional
+        The name of the extra dimension to iterate over. Default is None.
+
+    Returns
+    -------
+    dt.DataTree
+        The multiscale pyramid.
+
+    """
     import rioxarray  # noqa: F401
     from rasterio.transform import Affine
     from rasterio.warp import Resampling
@@ -94,4 +139,8 @@ def pyramid_reproject(
                 pyramid[lkey].ds[k] = xr.concat(da_all, ds[extra_dim])
             else:
                 pyramid[lkey].ds[k] = reproject(da, k)
+
+    pyramid = _add_metadata_and_zarr_encoding(
+        dt, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks
+    )
     return pyramid
