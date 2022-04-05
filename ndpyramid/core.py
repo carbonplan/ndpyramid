@@ -5,7 +5,7 @@ from collections import defaultdict
 import datatree as dt
 import xarray as xr
 
-from .utils import _add_metadata_and_zarr_encoding, get_version, multiscales_template
+from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
 
 
 def pyramid_coarsen(
@@ -141,7 +141,7 @@ def pyramid_reproject(
             else:
                 pyramid[lkey].ds[k] = reproject(da, k)
 
-    pyramid = _add_metadata_and_zarr_encoding(
+    pyramid = add_metadata_and_zarr_encoding(
         pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks
     )
     return pyramid

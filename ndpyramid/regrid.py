@@ -7,7 +7,7 @@ import datatree as dt
 import numpy as np
 import xarray as xr
 
-from .utils import _add_metadata_and_zarr_encoding, get_version, multiscales_template
+from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
 
 
 def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
@@ -190,7 +190,7 @@ def pyramid_regrid(
             regridder_apply_kws = {}
         pyramid[str(level)] = regridder(ds, **regridder_apply_kws)
 
-    pyramid = _add_metadata_and_zarr_encoding(
+    pyramid = add_metadata_and_zarr_encoding(
         pyramid, levels=levels, other_chunks=other_chunks, pixels_per_tile=pixels_per_tile
     )
 
