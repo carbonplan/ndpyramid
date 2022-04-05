@@ -34,7 +34,6 @@ cd ndpyramid
 python -m pip install -e .
 ```
 
-
 # usage
 
 Ndpyramid provides a set of utilites for creating pyramids with standardized metadata.
