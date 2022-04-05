@@ -97,9 +97,6 @@ def make_grid_pyramid(levels: int = 6) -> dt.DataTree:
     return data
 
 
-_add_metadata_and_zarr_encoding()
-
-
 def pyramid_regrid(
     ds: xr.Dataset,
     target_pyramid: dt.DataTree = None,
