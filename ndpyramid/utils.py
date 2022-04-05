@@ -112,7 +112,7 @@ def set_zarr_encoding(
     return ds
 
 
-def _add_metadata_and_zarr_encoding(
+def add_metadata_and_zarr_encoding(
     pyramid: dt.DataTree, *, levels: int, other_chunks: dict = None, pixels_per_tile: int = 128
 ) -> dt.DataTree:
 
