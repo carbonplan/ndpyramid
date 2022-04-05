@@ -11,11 +11,11 @@ def test_multiscales_template(datasets, type, method, version, args, kwargs):
         datasets=datasets, type=type, method=method, version=version, args=args, kwargs=kwargs
     )
     if not kwargs:
-        assert template['kwargs'] == {}
+        assert template['metadata']['kwargs'] == {}
     if not datasets:
         assert template['datasets'] == []
     if not args:
-        assert template['args'] == []
+        assert template['metadata']['args'] == []
     assert template['type'] == type
     assert template['metadata']['method'] == method
     assert template['metadata']['version'] == version
