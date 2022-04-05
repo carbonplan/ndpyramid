@@ -31,6 +31,7 @@ def get_version() -> str:
 
 
 def multiscales_template(
+    *,
     datasets: list = None,
     type: str = '',
     method: str = '',
