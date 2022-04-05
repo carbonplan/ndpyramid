@@ -2,6 +2,7 @@ from __future__ import annotations  # noqa: F401
 
 import contextlib
 
+import cf_xarray  # noqa: F401
 import datatree as dt
 import numpy as np
 import numpy.typing as npt
@@ -84,8 +85,8 @@ def set_zarr_encoding(
         codec_config = {'id': 'zlib', 'level': 1}
     compressor = numcodecs.get_codec(codec_config)
 
-    for k, da in ds.variables.items():
-
+    time_vars = ds.cf.axes.get('T', []) + ds.cf.bounds.get('T', [])
+    for varname, da in ds.variables.items():
         # maybe cast float type
         if np.issubdtype(da.dtype, np.floating) and float_dtype is not None:
             da = da.astype(float_dtype)
@@ -100,11 +101,13 @@ def set_zarr_encoding(
         da.encoding['compressor'] = compressor
         with contextlib.suppress(KeyError):
             del da.attrs['_FillValue']
-        da.encoding['_FillValue'] = default_fillvals.get(
-            da.dtype.str[-2:], None
-        )  # TODO: handle date/time types
+        da.encoding['_FillValue'] = default_fillvals.get(da.dtype.str[-2:], None)
 
-        ds[k] = da
+        # TODO: handle date/time types
+        # set encoding for time and time_bnds
+        if varname in time_vars:
+            da.encoding['dtype'] = 'int32'
+        ds[varname] = da
 
     return ds
 
@@ -148,9 +151,6 @@ def _add_metadata_and_zarr_encoding(
         pyramid[slevel].ds = set_zarr_encoding(
             pyramid[slevel].ds, codec_config={'id': 'zlib', 'level': 1}, float_dtype='float32'
         )
-        for var in ['time', 'time_bnds']:
-            if var in pyramid[slevel].ds:
-                pyramid[slevel].ds[var].encoding['dtype'] = 'int32'
 
     # set global metadata
     pyramid.ds.attrs.update({'title': 'multiscale data pyramid', 'version': __version__})
