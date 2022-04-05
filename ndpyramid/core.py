@@ -142,6 +142,6 @@ def pyramid_reproject(
                 pyramid[lkey].ds[k] = reproject(da, k)
 
     pyramid = _add_metadata_and_zarr_encoding(
-        dt, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks
+        pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks
     )
     return pyramid
