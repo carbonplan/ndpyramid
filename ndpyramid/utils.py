@@ -110,14 +110,14 @@ def set_zarr_encoding(
 
 
 def _add_metadata_and_zarr_encoding(
-    dta: dt.DataTree, *, levels: int, other_chunks: dict = None, pixels_per_tile: int = 128
+    pyramid: dt.DataTree, *, levels: int, other_chunks: dict = None, pixels_per_tile: int = 128
 ) -> dt.DataTree:
 
     '''Postprocess data pyramid. Adds multiscales metadata and sets Zarr encoding
 
     Parameters
     ----------
-    dt : dt.DataTree
+    pyramid : dt.DataTree
         Input data pyramid
     levels : int
         Number of levels in pyramid
@@ -137,21 +137,21 @@ def _add_metadata_and_zarr_encoding(
 
     for level in range(levels):
         slevel = str(level)
-        dta.ds.attrs['multiscales'][0]['datasets'][level]['pixels_per_tile'] = pixels_per_tile
+        pyramid.ds.attrs['multiscales'][0]['datasets'][level]['pixels_per_tile'] = pixels_per_tile
 
         # set dataset chunks
-        dta[slevel].ds = dta[slevel].ds.chunk(chunks)
-        if 'date_str' in dta[slevel].ds:
-            dta[slevel].ds['date_str'] = dta[slevel].ds['date_str'].chunk(-1)
+        pyramid[slevel].ds = pyramid[slevel].ds.chunk(chunks)
+        if 'date_str' in pyramid[slevel].ds:
+            pyramid[slevel].ds['date_str'] = pyramid[slevel].ds['date_str'].chunk(-1)
 
         # set dataset encoding
-        dt[slevel].ds = set_zarr_encoding(
-            dta[slevel].ds, codec_config={'id': 'zlib', 'level': 1}, float_dtype='float32'
+        pyramid[slevel].ds = set_zarr_encoding(
+            pyramid[slevel].ds, codec_config={'id': 'zlib', 'level': 1}, float_dtype='float32'
         )
         for var in ['time', 'time_bnds']:
-            if var in dta[slevel].ds:
-                dta[slevel].ds[var].encoding['dtype'] = 'int32'
+            if var in pyramid[slevel].ds:
+                pyramid[slevel].ds[var].encoding['dtype'] = 'int32'
 
     # set global metadata
-    dta.ds.attrs.update({'title': 'multiscale data pyramid', 'version': __version__})
-    return dta
+    pyramid.ds.attrs.update({'title': 'multiscale data pyramid', 'version': __version__})
+    return pyramid
