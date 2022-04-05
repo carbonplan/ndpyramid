@@ -144,8 +144,6 @@ def add_metadata_and_zarr_encoding(
 
         # set dataset chunks
         pyramid[slevel].ds = pyramid[slevel].ds.chunk(chunks)
-        if 'date_str' in pyramid[slevel].ds:
-            pyramid[slevel].ds['date_str'] = pyramid[slevel].ds['date_str'].chunk(-1)
 
         # set dataset encoding
         pyramid[slevel].ds = set_zarr_encoding(
