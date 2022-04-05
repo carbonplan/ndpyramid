@@ -99,7 +99,7 @@ def set_zarr_encoding(
         # update with new encoding
         da.encoding['compressor'] = compressor
         with contextlib.suppress(KeyError):
-            del da.atrrs['_FillValue']
+            del da.attrs['_FillValue']
         da.encoding['_FillValue'] = default_fillvals.get(
             da.dtype.str[-2:], None
         )  # TODO: handle date/time types
