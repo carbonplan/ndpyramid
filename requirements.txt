@@ -1,3 +1,4 @@
+cf_xarray
 numpy
 xarray
 xarray-datatree >= 0.0.4

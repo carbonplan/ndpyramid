@@ -7,7 +7,7 @@ import datatree as dt
 import numpy as np
 import xarray as xr
 
-from .utils import get_version, multiscales_template
+from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
 
 
 def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
@@ -105,6 +105,8 @@ def pyramid_regrid(
     method: str = 'bilinear',
     regridder_kws: dict = None,
     regridder_apply_kws: dict = None,
+    other_chunks: dict = None,
+    pixels_per_tile: int = 128,
 ) -> dt.DataTree:
     """Make a pyramid using xesmf's regridders
 
@@ -125,6 +127,10 @@ def pyramid_regrid(
     regridder_apply_kws : dict
         Keyword arguments such as `keep_attrs`, `skipna`, `na_thres`
         to pass to :py:meth:`~xesmf.Regridder.__call__`. Default is None
+    other_chunks : dict
+        Chunks for non-spatial dims to pass to :py:meth:`~xr.Dataset.chunk`. Default is None
+    pixels_per_tile : int, optional
+        Number of pixels per tile, by default 128
 
     Returns
     -------
@@ -183,5 +189,9 @@ def pyramid_regrid(
         if regridder_apply_kws is None:
             regridder_apply_kws = {}
         pyramid[str(level)] = regridder(ds, **regridder_apply_kws)
+
+    pyramid = add_metadata_and_zarr_encoding(
+        pyramid, levels=levels, other_chunks=other_chunks, pixels_per_tile=pixels_per_tile
+    )
 
     return pyramid
