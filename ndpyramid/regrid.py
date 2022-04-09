@@ -102,6 +102,7 @@ def pyramid_regrid(
     target_pyramid: dt.DataTree = None,
     levels: int = None,
     weights_template: str = None,
+    weights_pyramid: dt.DataTree = None,
     method: str = 'bilinear',
     regridder_kws: dict = None,
     regridder_apply_kws: dict = None,
@@ -120,6 +121,8 @@ def pyramid_regrid(
         Number of levels in pyramid, by default None
     weights_template : str, optional
         Filepath to write generated weights to, e.g. `'weights_{level}'`, by default None
+    weights_pyramid : dt.DataTree, optional
+       pyramid containing pregenerated weights
     method : str, optional
         Regridding method. See :py:class:`~xesmf.Regridder` for valid options, by default 'bilinear'
     regridder_kws : dict
@@ -173,17 +176,24 @@ def pyramid_regrid(
     # pyramid data
     for level in range(levels):
         grid = target_pyramid[str(level)].ds.load()
+        if weights_pyramid:
+            weights = weights_pyramid[str(level)].ds.load()
+        else:
+            weights = None
 
         # get the regridder object
-        if not weights_template:
+        if not weights_template and not weights_pyramid:
             regridder = xe.Regridder(ds, grid, method, **regridder_kws)
         else:
-            fn = pathlib.PosixPath(weights_template.format(level=level))
-            if not fn.exists():
-                regridder = xe.Regridder(ds, grid, method, **regridder_kws)
-                regridder.to_netcdf(filename=fn)
-            else:
-                regridder = xe.Regridder(ds, grid, method, weights=fn, **regridder_kws)
+            if weights_template:
+                fn = pathlib.PosixPath(weights_template.format(level=level))
+                if not fn.exists():
+                    raise FileNotFoundError(fn)
+            elif weights_pyramid:
+                fn = weights_pyramid[str(level)].ds.load()
+            regridder = xe.Regridder(
+                ds, grid, method, reuse_weights=True, weights=fn, **regridder_kws
+            )
 
         # regrid
         if regridder_apply_kws is None:
