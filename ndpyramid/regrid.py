@@ -97,7 +97,9 @@ def make_grid_pyramid(levels: int = 6) -> dt.DataTree:
     return data
 
 
-def generate_weights_pyramid(ds_in: xr.Dataset, levels: int) -> dt.DataTree:
+def generate_weights_pyramid(
+    ds_in: xr.Dataset, levels: int, method: str = 'bilinear', regridder_kws: dict = None
+) -> dt.DataTree:
     """helper function to generate weights for a multiscale regridder
 
     Parameters
@@ -106,6 +108,10 @@ def generate_weights_pyramid(ds_in: xr.Dataset, levels: int) -> dt.DataTree:
         Input dataset to regrid
     levels : int
         Number of levels in the pyramid
+    method : str, optional
+        Regridding method. See :py:class:`~xesmf.Regridder` for valid options, by default 'bilinear'
+    regridder_kws : dict
+        Keyword arguments to pass to :py:class:`~xesmf.Regridder`. Default is `{'periodic': True}`
 
     Returns
     -------
@@ -116,10 +122,13 @@ def generate_weights_pyramid(ds_in: xr.Dataset, levels: int) -> dt.DataTree:
     import xarray as xr
     import xesmf as xe
 
+    regridder_kws = {} if regridder_kws is None else regridder_kws
+    regridder_kws = {'periodic': True, **regridder_kws}
+
     weights_pyramid = datatree.DataTree()
     for level in range(levels):
         ds_out = make_grid_ds(level=level)
-        regridder = xe.Regridder(ds_in, ds_out, method='bilinear')
+        regridder = xe.Regridder(ds_in, ds_out, method, **regridder_kws)
         w = regridder.weights.data
         dim = 'n_s'
         ds = xr.Dataset(
@@ -129,10 +138,11 @@ def generate_weights_pyramid(ds_in: xr.Dataset, levels: int) -> dt.DataTree:
                 'row': (dim, w.coords[0, :] + 1),
             }
         )
+        ds.attrs = {'n_in': regridder.n_in, 'n_out': regridder.n_out}
         weights_pyramid[str(level)] = ds
 
     weights_pyramid.ds.attrs['levels'] = levels
-    weights_pyramid.ds.attrs['regrid_method'] = regridder.method
+    weights_pyramid.ds.attrs['regrid_method'] = method
 
     return weights_pyramid
 
@@ -191,8 +201,8 @@ def pyramid_regrid(
     if levels is None:
         levels = len(target_pyramid.keys())  # TODO: get levels from the pyramid metadata
 
-    if regridder_kws is None:
-        regridder_kws = {'periodic': True}
+    regridder_kws = {} if regridder_kws is None else regridder_kws
+    regridder_kws = {'periodic': True, **regridder_kws}
 
     # multiscales spec
     save_kwargs = locals()
