@@ -206,6 +206,7 @@ def pyramid_regrid(
     del save_kwargs['target_pyramid']
     del save_kwargs['xe']
     del save_kwargs['sparse']
+    del save_kwargs['weights_pyramid']
 
     attrs = {
         'multiscales': multiscales_template(
