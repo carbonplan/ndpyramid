@@ -140,6 +140,7 @@ def pyramid_regrid(
     pyramid : dt.DataTree
         Multiscale data pyramid
     """
+    import sparse
     import xesmf as xe
 
     if target_pyramid is None:
@@ -176,11 +177,6 @@ def pyramid_regrid(
     # pyramid data
     for level in range(levels):
         grid = target_pyramid[str(level)].ds.load()
-        if weights_pyramid:
-            weights = weights_pyramid[str(level)].ds.load()
-        else:
-            weights = None
-
         # get the regridder object
         if not weights_template and not weights_pyramid:
             regridder = xe.Regridder(ds, grid, method, **regridder_kws)
@@ -190,7 +186,17 @@ def pyramid_regrid(
                 if not fn.exists():
                     raise FileNotFoundError(fn)
             elif weights_pyramid:
-                fn = weights_pyramid[str(level)].ds.load()
+                ds_w = weights_pyramid[str(level)].ds
+                # Reconstruct weights into format that xESMF understands
+                col = ds_w['col'].values - 1
+                row = ds_w['row'].values - 1
+                s = ds_w['S'].values
+                n_out, n_in = ds_w.attrs['n_out'], ds_w.attrs['n_in']
+                crds = np.stack([row, col])
+                fn = xr.DataArray(
+                    sparse.COO(crds, s, (n_out, n_in)), dims=('out_dim', 'in_dim'), name='weights'
+                )
+
             regridder = xe.Regridder(
                 ds, grid, method, reuse_weights=True, weights=fn, **regridder_kws
             )
@@ -198,6 +204,7 @@ def pyramid_regrid(
         # regrid
         if regridder_apply_kws is None:
             regridder_apply_kws = {}
+        regridder_apply_kws = {**{'keep_attrs': True}, **regridder_apply_kws}
         pyramid[str(level)] = regridder(ds, **regridder_apply_kws)
 
     pyramid = add_metadata_and_zarr_encoding(
