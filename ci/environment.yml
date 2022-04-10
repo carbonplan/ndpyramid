@@ -16,6 +16,7 @@ dependencies:
   - rasterio
   - rioxarray
   - scipy
+  - sparse>=0.13.0
   - xarray
   - xarray-datatree>=0.0.4
   - xesmf
