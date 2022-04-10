@@ -41,7 +41,7 @@ def test_regridded_pyramid(temperature, regridder_apply_kws):
     assert pyramid.ds.attrs['multiscales']
     expected_attrs = (
         temperature['air'].attrs
-        if regridder_apply_kws and regridder_apply_kws.get('keep_attrs')
+        if not regridder_apply_kws or regridder_apply_kws.get('keep_attrs')
         else {}
     )
     assert pyramid['0'].ds.air.attrs == expected_attrs
