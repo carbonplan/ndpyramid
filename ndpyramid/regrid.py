@@ -9,6 +9,35 @@ import xarray as xr
 from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
 
 
+def xesmf_weights_to_xarray(regridder) -> xr.Dataset:
+    w = regridder.weights.data
+    dim = 'n_s'
+    ds = xr.Dataset(
+        {
+            'S': (dim, w.data),
+            'col': (dim, w.coords[1, :] + 1),
+            'row': (dim, w.coords[0, :] + 1),
+        }
+    )
+    ds.attrs = {'n_in': regridder.n_in, 'n_out': regridder.n_out}
+    return ds
+
+
+def _reconstruct_xesmf_weights(ds_w):
+    """Reconstruct weights into format that xESMF understands"""
+    import sparse
+    import xarray as xr
+
+    col = ds_w['col'].values - 1
+    row = ds_w['row'].values - 1
+    s = ds_w['S'].values
+    n_out, n_in = ds_w.attrs['n_out'], ds_w.attrs['n_in']
+    crds = np.stack([row, col])
+    return xr.DataArray(
+        sparse.COO(crds, s, (n_out, n_in)), dims=('out_dim', 'in_dim'), name='weights'
+    )
+
+
 def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
     """Make a dataset representing a target grid
 
@@ -118,7 +147,6 @@ def generate_weights_pyramid(
         Multiscale weights
     """
     import datatree
-    import xarray as xr
     import xesmf as xe
 
     regridder_kws = {} if regridder_kws is None else regridder_kws
@@ -128,38 +156,14 @@ def generate_weights_pyramid(
     for level in range(levels):
         ds_out = make_grid_ds(level=level)
         regridder = xe.Regridder(ds_in, ds_out, method, **regridder_kws)
-        w = regridder.weights.data
-        dim = 'n_s'
-        ds = xr.Dataset(
-            {
-                'S': (dim, w.data),
-                'col': (dim, w.coords[1, :] + 1),
-                'row': (dim, w.coords[0, :] + 1),
-            }
-        )
-        ds.attrs = {'n_in': regridder.n_in, 'n_out': regridder.n_out}
+        ds = xesmf_weights_to_xarray(regridder)
+
         weights_pyramid[str(level)] = ds
 
     weights_pyramid.ds.attrs['levels'] = levels
     weights_pyramid.ds.attrs['regrid_method'] = method
 
     return weights_pyramid
-
-
-def _reconstruct_xesmf_weights(ds_w):
-    """Reconstruct weights into format that xESMF understands"""
-    import sparse
-    import xarray as xr
-
-    col = ds_w['col'].values - 1
-    row = ds_w['row'].values - 1
-    s = ds_w['S'].values
-    n_out, n_in = ds_w.attrs['n_out'], ds_w.attrs['n_in']
-    crds = np.stack([row, col])
-    weights = xr.DataArray(
-        sparse.COO(crds, s, (n_out, n_in)), dims=('out_dim', 'in_dim'), name='weights'
-    )
-    return weights
 
 
 def pyramid_regrid(
@@ -220,7 +224,6 @@ def pyramid_regrid(
     del save_kwargs['ds']
     del save_kwargs['target_pyramid']
     del save_kwargs['xe']
-    del save_kwargs['sparse']
     del save_kwargs['weights_pyramid']
 
     attrs = {
