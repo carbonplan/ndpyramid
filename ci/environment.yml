@@ -18,6 +18,6 @@ dependencies:
   - scipy
   - sparse>=0.13.0
   - xarray
-  - xarray-datatree>=0.0.4
+  - xarray-datatree>=0.0.5
   - xesmf
   - zarr

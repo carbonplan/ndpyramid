@@ -119,9 +119,11 @@ def make_grid_pyramid(levels: int = 6) -> dt.DataTree:
     pyramid : dt.DataTree
         Multiscale grid definition
     """
-    data = dt.DataTree()
+    plevels = {}
     for level in range(levels):
-        data[str(level)] = make_grid_ds(level).chunk(-1)
+        plevels[str(level)] = make_grid_ds(level).chunk(-1)
+    data = dt.DataTree.from_dict(plevels)
+
     return data
 
 
@@ -152,14 +154,15 @@ def generate_weights_pyramid(
     regridder_kws = {} if regridder_kws is None else regridder_kws
     regridder_kws = {'periodic': True, **regridder_kws}
 
-    weights_pyramid = datatree.DataTree()
+    plevels = {}
     for level in range(levels):
         ds_out = make_grid_ds(level=level)
         regridder = xe.Regridder(ds_in, ds_out, method, **regridder_kws)
         ds = xesmf_weights_to_xarray(regridder)
 
-        weights_pyramid[str(level)] = ds
+        plevels[str(level)] = ds
 
+    weights_pyramid = datatree.DataTree.from_dict(plevels)
     weights_pyramid.ds.attrs['levels'] = levels
     weights_pyramid.ds.attrs['regrid_method'] = method
 
@@ -238,7 +241,7 @@ def pyramid_regrid(
 
     # set up pyramid
     root = xr.Dataset(attrs=attrs)
-    pyramid = dt.DataTree(data=root, name='root')
+    plevels = {}
 
     # pyramid data
     for level in range(levels):
@@ -260,7 +263,10 @@ def pyramid_regrid(
         if regridder_apply_kws is None:
             regridder_apply_kws = {}
         regridder_apply_kws = {**{'keep_attrs': True}, **regridder_apply_kws}
-        pyramid[str(level)] = regridder(ds, **regridder_apply_kws)
+        plevels[str(level)] = regridder(ds, **regridder_apply_kws)
+
+    pyramid = dt.DataTree.from_dict(plevels)
+    pyramid.ds = xr.Dataset(attrs=attrs)
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid, levels=levels, other_chunks=other_chunks, pixels_per_tile=pixels_per_tile
