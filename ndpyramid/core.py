@@ -40,15 +40,16 @@ def pyramid_coarsen(
     }
 
     # set up pyramid
-    root = xr.Dataset(attrs=attrs)
-    pyramid = dt.DataTree(data=root, name='root')
+    levels = {}
 
     # pyramid data
     for key, factor in enumerate(factors):
 
-        skey = str(key)
         kwargs.update({d: factor for d in dims})
-        pyramid[skey] = ds.coarsen(**kwargs).mean()
+        levels[str(key)] = ds.coarsen(**kwargs).mean()
+
+    pyramid = dt.DataTree.from_dict(levels)
+    pyramid.ds = xr.Dataset(attrs=attrs)
 
     return pyramid
 
@@ -109,8 +110,7 @@ def pyramid_reproject(
         resampling_dict = resampling
 
     # set up pyramid
-    root = xr.Dataset(attrs=attrs)
-    pyramid = dt.DataTree(data=root, name='root')
+    plevels = {}
 
     # pyramid data
     for level in range(levels):
@@ -128,7 +128,7 @@ def pyramid_reproject(
                 transform=dst_transform,
             )
 
-        pyramid[lkey] = xr.Dataset(attrs=ds.attrs)
+        plevels[lkey] = xr.Dataset(attrs=ds.attrs)
         for k, da in ds.items():
             if len(da.shape) == 4:
                 if extra_dim is None:
@@ -137,9 +137,12 @@ def pyramid_reproject(
                 for index in ds[extra_dim]:
                     da_reprojected = reproject(da.sel({extra_dim: index}), k)
                     da_all.append(da_reprojected)
-                pyramid[lkey].ds[k] = xr.concat(da_all, ds[extra_dim])
+                plevels[lkey][k] = xr.concat(da_all, ds[extra_dim])
             else:
-                pyramid[lkey].ds[k] = reproject(da, k)
+                plevels[lkey][k] = reproject(da, k)
+
+    pyramid = dt.DataTree.from_dict(plevels)
+    pyramid.ds = xr.Dataset(attrs=attrs)
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks
