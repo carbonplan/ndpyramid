@@ -2,7 +2,6 @@ from __future__ import annotations  # noqa: F401
 
 import contextlib
 
-import cf_xarray  # noqa: F401
 import datatree as dt
 import numpy as np
 import numpy.typing as npt
