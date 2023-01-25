@@ -8,11 +8,64 @@ import xarray as xr
 from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
 
 
+def pyramid_coarsen_by_levels(
+    ds: xr.Dataset, *, levels: int, dims: list[str], **kwargs
+) -> dt.DataTree:
+    """Create a multiscale pyramid via coarsening of a dataset by given factors
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset to coarsen.
+    levels : int
+        # of levels to coarsen to
+    dims : list[str]
+        The dimensions to coarsen.
+    kwargs : dict
+        Additional keyword arguments to pass to xarray.Dataset.coarsen.
+    """
+
+    # multiscales spec
+    save_kwargs = locals()
+    del save_kwargs['ds']
+
+    attrs = {
+        'multiscales': multiscales_template(
+            datasets=[{'path': str(i)} for i in range(levels)],
+            type='reduce',
+            method='pyramid_coarsen',
+            version=get_version(),
+            kwargs=save_kwargs,
+        )
+    }
+    # Set default coarsening factor for dims to factor of 2
+    kwargs.update({d: 2 for d in dims})
+
+    # set up pyramid
+    pyr_levels = {}
+
+    # Assign base ds to zeroth level of pyramid
+    pyr_levels['0'] = ds
+
+    for lvl in range(1, levels):
+        dims_vals = {k: v for k, v in ds.dims.items() if k in dims}
+        all_dims_GE_4 = all(int(i) >= 4 for i in dims_vals.values())
+
+        # Assures further coarsening cannot bring dim to 1
+        if all_dims_GE_4:
+            ds = ds.coarsen(**kwargs).mean().load()
+            pyr_levels[str(lvl)] = ds
+
+    pyramid = dt.DataTree.from_dict(pyr_levels)
+    pyramid.ds = xr.Dataset(attrs=attrs)
+
+    return pyramid
+
+
 def pyramid_coarsen(
     ds: xr.Dataset, *, factors: list[int], dims: list[str], **kwargs
 ) -> dt.DataTree:
     """Create a multiscale pyramid via coarsening of a dataset by given factors
-
     Parameters
     ----------
     ds : xarray.Dataset

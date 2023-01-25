@@ -56,11 +56,14 @@ import xarray as xr
 import rioxarray
 from ndpyramid import pyramid_coarsen, pyramid_reproject
 
-# load a sampel xarray.Dataset
+# load a sample xarray.Dataset
 ds = xr.tutorial.load_dataset('air_temperature')
 
-# make a coarsened pyramid
+# make a coarsened pyramid by factor
 pyramid = pyramid_coarsen(ds, factors=[16, 8, 4, 3, 2, 1], dims=['lat', 'lon'], boundary='trim')
+
+# make a coarsened pyramid by number of levels
+pyramid = pyramid_coarsen(ds, levels=3, dims=['lat', 'lon'], boundary='trim')
 
 # make a reprojected (EPSG:3857) pyramid
 ds = ds.rio.write_crs('EPSG:4326')
