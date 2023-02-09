@@ -5,6 +5,11 @@ on:
     branches:
       - main
   pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * *' # Daily “At 00:00”
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -18,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ['3.8', '3.9', '3.10']
+        python-version: ['3.9', '3.10', '3.11']
     timeout-minutes: 20
     defaults:
       run:
@@ -42,7 +47,7 @@ jobs:
           conda list
       - name: Run tests
         run: |
-          python -m pytest --cov=./ --cov-report=xml --verbose ./
+          python -m pytest
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
