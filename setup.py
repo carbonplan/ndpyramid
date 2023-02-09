@@ -11,7 +11,7 @@ with open('requirements.txt') as f:
     INSTALL_REQUIRES = f.read().strip().split('\n')
 
 LONG_DESCRIPTION = pathlib.Path('README.md').read_text()
-PYTHON_REQUIRES = '>=3.8'
+PYTHON_REQUIRES = '>=3.9'
 
 description = 'A small utility for generating ND array pyramids using Xarray and Zarr.'
 
@@ -20,8 +20,8 @@ setup(
     description=description,
     long_description=LONG_DESCRIPTION,
     long_description_content_type='text/markdown',
-    maintainer='Joe Hamman',
-    maintainer_email='joe@carbonplan.org',
+    maintainer='CarbonPlan',
+    maintainer_email='hello@carbonplan.org',
     url='https://github.com/carbonplan/ndpyramid',
     packages=find_packages(),
     include_package_data=True,

@@ -1,5 +1,3 @@
 cf_xarray
-numpy
-xarray
-xarray-datatree >= 0.0.5
+xarray-datatree >= 0.0.11
 zarr

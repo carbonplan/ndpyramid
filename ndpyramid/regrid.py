@@ -148,7 +148,6 @@ def generate_weights_pyramid(
     weights : dt.DataTree
         Multiscale weights
     """
-    import datatree
     import xesmf as xe
 
     regridder_kws = {} if regridder_kws is None else regridder_kws
@@ -162,9 +161,10 @@ def generate_weights_pyramid(
 
         plevels[str(level)] = ds
 
-    weights_pyramid = datatree.DataTree.from_dict(plevels)
-    weights_pyramid.ds.attrs['levels'] = levels
-    weights_pyramid.ds.attrs['regrid_method'] = method
+    root = xr.Dataset(attrs={'levels': levels, 'regrid_method': method})
+    plevels['/'] = root
+    weights_pyramid = dt.DataTree.from_dict(plevels)
+
 
     return weights_pyramid
 
@@ -240,7 +240,7 @@ def pyramid_regrid(
     }
 
     # set up pyramid
-    root = xr.Dataset(attrs=attrs)
+
     plevels = {}
 
     # pyramid data
@@ -265,8 +265,9 @@ def pyramid_regrid(
         regridder_apply_kws = {**{'keep_attrs': True}, **regridder_apply_kws}
         plevels[str(level)] = regridder(ds, **regridder_apply_kws)
 
+    root = xr.Dataset(attrs=attrs)
+    plevels['/'] = root
     pyramid = dt.DataTree.from_dict(plevels)
-    pyramid.ds = xr.Dataset(attrs=attrs)
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid, levels=levels, other_chunks=other_chunks, pixels_per_tile=pixels_per_tile
