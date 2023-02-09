@@ -4,7 +4,7 @@ ci:
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0
+    rev: v4.4.0
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
@@ -15,35 +15,18 @@ repos:
       - id: debug-statements
       - id: mixed-line-ending
 
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v2.34.0
+  - repo: https://github.com/charliermarsh/ruff-pre-commit
+    rev: 'v0.0.244'
     hooks:
-      - id: pyupgrade
-        args:
-          - '--py38-plus'
+      - id: ruff
+        args: ['--fix']
 
-  - repo: https://github.com/psf/black
-    rev: 22.6.0
+  - repo: https://github.com/keewis/blackdoc
+    rev: v0.3.8
     hooks:
-      - id: black
-      - id: black-jupyter
-
-  - repo: https://github.com/PyCQA/flake8
-    rev: 4.0.1
-    hooks:
-      - id: flake8
-
-  - repo: https://github.com/asottile/seed-isort-config
-    rev: v2.2.0
-    hooks:
-      - id: seed-isort-config
-  - repo: https://github.com/PyCQA/isort
-    rev: 5.10.1
-    hooks:
-      - id: isort
+      - id: blackdoc
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.7.1
+    rev: v3.0.0-alpha.4
     hooks:
       - id: prettier
-        language_version: system
