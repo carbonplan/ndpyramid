@@ -119,12 +119,10 @@ def make_grid_pyramid(levels: int = 6) -> dt.DataTree:
     pyramid : dt.DataTree
         Multiscale grid definition
     """
-    plevels = {}
-    for level in range(levels):
-        plevels[str(level)] = make_grid_ds(level).chunk(-1)
-    data = dt.DataTree.from_dict(plevels)
-
-    return data
+    plevels = {
+        str(level): make_grid_ds(level).chunk(-1) for level in range(levels)
+    }
+    return dt.DataTree.from_dict(plevels)
 
 
 def generate_weights_pyramid(
@@ -163,10 +161,7 @@ def generate_weights_pyramid(
 
     root = xr.Dataset(attrs={'levels': levels, 'regrid_method': method})
     plevels['/'] = root
-    weights_pyramid = dt.DataTree.from_dict(plevels)
-
-
-    return weights_pyramid
+    return dt.DataTree.from_dict(plevels)
 
 
 def pyramid_regrid(

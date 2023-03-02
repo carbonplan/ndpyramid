@@ -137,7 +137,7 @@ def add_metadata_and_zarr_encoding(
     '''
     chunks = {'x': pixels_per_tile, 'y': pixels_per_tile}
     if other_chunks is not None:
-        chunks.update(other_chunks)
+        chunks |= other_chunks
 
     for level in range(levels):
         slevel = str(level)
