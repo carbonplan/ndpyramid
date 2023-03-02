@@ -23,6 +23,11 @@ def pyramid_coarsen_by_levels(
         The dimensions to coarsen.
     kwargs : dict
         Additional keyword arguments to pass to xarray.Dataset.coarsen.
+
+    Returns
+    -------
+    dt.DataTree
+        The multiscale pyramid.
     """
 
     # multiscales spec
@@ -39,13 +44,10 @@ def pyramid_coarsen_by_levels(
         )
     }
     # Set default coarsening factor for dims to factor of 2
-    kwargs.update({d: 2 for d in dims})
+    kwargs |= {d: 2 for d in dims}
 
     # set up pyramid
-    pyr_levels = {}
-
-    # Assign base ds to zeroth level of pyramid
-    pyr_levels['0'] = ds
+    pyr_levels = {'0': ds}
 
     for lvl in range(1, levels):
         dims_vals = {k: v for k, v in ds.dims.items() if k in dims}
@@ -56,10 +58,9 @@ def pyramid_coarsen_by_levels(
             ds = ds.coarsen(**kwargs).mean().load()
             pyr_levels[str(lvl)] = ds
 
-    pyramid = dt.DataTree.from_dict(pyr_levels)
-    pyramid.ds = xr.Dataset(attrs=attrs)
+    pyr_levels['/'] = xr.Dataset(attrs=attrs)
 
-    return pyramid
+    return dt.DataTree.from_dict(pyr_levels)
 
 
 def pyramid_coarsen(
