@@ -44,14 +44,12 @@ def pyramid_coarsen(
 
     # pyramid data
     for key, factor in enumerate(factors):
-
-        kwargs.update({d: factor for d in dims})
+        # merge dictionary via union operator
+        kwargs |= {d: factor for d in dims}
         levels[str(key)] = ds.coarsen(**kwargs).mean()
 
-    pyramid = dt.DataTree.from_dict(levels)
-    pyramid.ds = xr.Dataset(attrs=attrs)
-
-    return pyramid
+    levels['/'] = xr.Dataset(attrs=attrs)
+    return dt.DataTree.from_dict(levels)
 
 
 def pyramid_reproject(
@@ -63,6 +61,7 @@ def pyramid_reproject(
     resampling: str | dict = 'average',
     extra_dim: str = None,
 ) -> dt.DataTree:
+
     """Create a multiscale pyramid of a dataset via reprojection.
 
     Parameters
@@ -88,6 +87,7 @@ def pyramid_reproject(
         The multiscale pyramid.
 
     """
+
     import rioxarray  # noqa: F401
     from rasterio.transform import Affine
     from rasterio.warp import Resampling
@@ -104,6 +104,7 @@ def pyramid_reproject(
         )
     }
 
+    # Convert resampling from string to dictionary if necessary
     if isinstance(resampling, str):
         resampling_dict = defaultdict(lambda: resampling)
     else:
@@ -128,21 +129,26 @@ def pyramid_reproject(
                 transform=dst_transform,
             )
 
+        # create the data array for each level
         plevels[lkey] = xr.Dataset(attrs=ds.attrs)
         for k, da in ds.items():
             if len(da.shape) == 4:
+                # if extra_dim is not specified, raise an error
                 if extra_dim is None:
                     raise ValueError("must specify 'extra_dim' to iterate over 4d data")
                 da_all = []
                 for index in ds[extra_dim]:
+                    # reproject each index of the 4th dimension
                     da_reprojected = reproject(da.sel({extra_dim: index}), k)
                     da_all.append(da_reprojected)
                 plevels[lkey][k] = xr.concat(da_all, ds[extra_dim])
             else:
+                # if the data array is not 4D, just reproject it
                 plevels[lkey][k] = reproject(da, k)
 
+    # create the final multiscale pyramid
+    levels['/'] = xr.Dataset(attrs=attrs)
     pyramid = dt.DataTree.from_dict(plevels)
-    pyramid.ds = xr.Dataset(attrs=attrs)
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks
