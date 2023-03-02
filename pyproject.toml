@@ -1,6 +1,6 @@
 
 [build-system]
-requires = ["setuptools>=64", "setuptools-scm[toml]>=6.2"]
+requires = ["setuptools>=64", "setuptools-scm[toml]>=6.2", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -22,6 +22,7 @@ classifiers = [
     "Topic :: Scientific/Engineering",
 ]
 dynamic = ["version"]
+
 dependencies = ["cf_xarray", "xarray-datatree >= 0.0.11", "zarr"]
 
 [project.urls]
@@ -34,6 +35,12 @@ include = ["ndpyramid*"]
 version_scheme = "post-release"
 local_scheme = "node-and-date"
 fallback_version = "999"
+write_to = "ndpyramid/_version.py"
+write_to_template = '__version__ = "{version}"'
+
+
+# [tool.setuptools.dynamic]
+# version = { attr = "ndpyramid.__version__" }
 
 
 [tool.black]
