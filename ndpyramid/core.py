@@ -40,16 +40,16 @@ def pyramid_coarsen(
     }
 
     # set up pyramid
-    levels = {}
+    plevels = {}
 
     # pyramid data
     for key, factor in enumerate(factors):
         # merge dictionary via union operator
         kwargs |= {d: factor for d in dims}
-        levels[str(key)] = ds.coarsen(**kwargs).mean()
+        plevels[str(key)] = ds.coarsen(**kwargs).mean()
 
-    levels['/'] = xr.Dataset(attrs=attrs)
-    return dt.DataTree.from_dict(levels)
+    plevels['/'] = xr.Dataset(attrs=attrs)
+    return dt.DataTree.from_dict(plevels)
 
 
 def pyramid_reproject(
@@ -147,7 +147,7 @@ def pyramid_reproject(
                 plevels[lkey][k] = reproject(da, k)
 
     # create the final multiscale pyramid
-    levels['/'] = xr.Dataset(attrs=attrs)
+    plevels['/'] = xr.Dataset(attrs=attrs)
     pyramid = dt.DataTree.from_dict(plevels)
 
     pyramid = add_metadata_and_zarr_encoding(
