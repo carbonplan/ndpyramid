@@ -1,6 +1,7 @@
 from __future__ import annotations  # noqa: F401
 
 import itertools
+import typing
 
 import datatree as dt
 import numpy as np
@@ -38,7 +39,7 @@ def _reconstruct_xesmf_weights(ds_w):
     )
 
 
-def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
+def make_grid_ds(level: int, pixels_per_tile: int = 128, projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator') -> xr.Dataset:
     """Make a dataset representing a target grid
 
     Parameters
@@ -47,6 +48,8 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
         The zoom level to compute the grid for. Level zero is the furthest out zoom level
     pixels_per_tile : int, optional
         Number of pixels to include along each axis in individual tiles, by default 128
+    projection : str, optional
+        The projection to use for the grid, by default 'equidistant-cylindrical'
 
     Returns
     -------
@@ -62,12 +65,23 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
     from pyproj import Proj
     from rasterio.transform import Affine
 
-    p = Proj('EPSG:3857')
+
+    supported_projections = ('web-mercator', 'equidistant-cylindrical')
+    if projection not in supported_projections:
+        raise ValueError(f'Projection {projection} not supported. Must be one of {supported_projections}')
+
     dim = (2**level) * pixels_per_tile
 
-    transform = Affine.translation(-20026376.39, 20048966.10) * Affine.scale(
-        (20026376.39 * 2) / dim, -(20048966.10 * 2) / dim
-    )
+    if projection == 'equidistant-cylindrical':
+        p = Proj('EPSG:4326')
+        transform = Affine.translation(-180, 90) * Affine.scale(360 / dim, -180 / dim)
+        title='Equidistant Cylindrical Grid'
+
+    elif projection == 'web-mercator':
+        p = Proj('EPSG:3857')
+        transform = Affine.translation(-20026376.39, 20048966.10) * Affine.scale((20026376.39 * 2) / dim, -(20048966.10 * 2) / dim)
+        title='Web Mercator Grid'
+
 
     grid_shape = (dim, dim)
     bounds_shape = (dim + 1, dim + 1)
@@ -102,11 +116,11 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128) -> xr.Dataset:
             'lat_b': xr.DataArray(lat_b, dims=['y_b', 'x_b']),
             'lon_b': xr.DataArray(lon_b, dims=['y_b', 'x_b']),
         },
-        attrs=dict(title='Web Mercator Grid', Convensions='CF-1.8'),
+        attrs=dict(title=title, crs=str(p.crs), Convensions='CF-1.8'),
     )
 
 
-def make_grid_pyramid(levels: int = 6) -> dt.DataTree:
+def make_grid_pyramid(levels: int = 6, projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator') -> dt.DataTree:
     """helper function to create a grid pyramid for use with xesmf
 
     Parameters
@@ -120,13 +134,15 @@ def make_grid_pyramid(levels: int = 6) -> dt.DataTree:
         Multiscale grid definition
     """
     plevels = {
-        str(level): make_grid_ds(level).chunk(-1) for level in range(levels)
+        str(level): make_grid_ds(level, projection=projection).chunk(-1) for level in range(levels)
     }
     return dt.DataTree.from_dict(plevels)
 
 
 def generate_weights_pyramid(
-    ds_in: xr.Dataset, levels: int, method: str = 'bilinear', regridder_kws: dict = None
+    ds_in: xr.Dataset, levels: int, method: str = 'bilinear', regridder_kws: dict = None,
+    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator'
+
 ) -> dt.DataTree:
     """helper function to generate weights for a multiscale regridder
 
@@ -140,6 +156,8 @@ def generate_weights_pyramid(
         Regridding method. See :py:class:`~xesmf.Regridder` for valid options, by default 'bilinear'
     regridder_kws : dict
         Keyword arguments to pass to :py:class:`~xesmf.Regridder`. Default is `{'periodic': True}`
+    projection : str, optional
+        The projection to use for the grid, by default 'web-mercator'
 
     Returns
     -------
@@ -153,7 +171,7 @@ def generate_weights_pyramid(
 
     plevels = {}
     for level in range(levels):
-        ds_out = make_grid_ds(level=level)
+        ds_out = make_grid_ds(level=level, projection=projection)
         regridder = xe.Regridder(ds_in, ds_out, method, **regridder_kws)
         ds = xesmf_weights_to_xarray(regridder)
 
@@ -174,6 +192,7 @@ def pyramid_regrid(
     regridder_apply_kws: dict = None,
     other_chunks: dict = None,
     pixels_per_tile: int = 128,
+    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator'
 ) -> dt.DataTree:
     """Make a pyramid using xesmf's regridders
 
@@ -198,6 +217,8 @@ def pyramid_regrid(
         Chunks for non-spatial dims to pass to :py:meth:`~xr.Dataset.chunk`. Default is None
     pixels_per_tile : int, optional
         Number of pixels per tile, by default 128
+    projection : str, optional
+        Projection to use for the grid, by default 'web-mercator'
 
     Returns
     -------
@@ -208,7 +229,7 @@ def pyramid_regrid(
 
     if target_pyramid is None:
         if levels is not None:
-            target_pyramid = make_grid_pyramid(levels)
+            target_pyramid = make_grid_pyramid(levels, projection=projection)
         else:
             raise ValueError('must either provide a target_pyramid or number of levels')
     if levels is None:

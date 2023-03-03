@@ -61,12 +61,13 @@ def test_regridded_pyramid_with_weights(temperature):
     pyramid.to_zarr(MemoryStore())
 
 
-def test_make_grid_ds():
+@pytest.mark.parametrize('projection', ['web-mercator', 'equidistant-cylindrical'])
+def test_make_grid_ds(projection):
 
-    grid = make_grid_ds(0, pixels_per_tile=8)
+    grid = make_grid_ds(0, pixels_per_tile=8, projection=projection)
     lon_vals = grid.lon_b.values
     assert np.all((lon_vals[-1, :] - lon_vals[0, :]) < 0.001)
-
+    assert grid.attrs['crs'] == 'EPSG:3857' if projection == 'web-mercator' else 'EPSG:4326'
 
 @pytest.mark.parametrize('levels', [1, 2])
 @pytest.mark.parametrize('method', ['bilinear', 'conservative'])
