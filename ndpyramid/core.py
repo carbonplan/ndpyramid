@@ -1,10 +1,12 @@
 from __future__ import annotations  # noqa: F401
 
+import typing
 from collections import defaultdict
 
 import datatree as dt
 import xarray as xr
 
+from .common import Projection
 from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
 
 
@@ -55,6 +57,7 @@ def pyramid_coarsen(
 def pyramid_reproject(
     ds: xr.Dataset,
     *,
+    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     levels: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
@@ -68,6 +71,8 @@ def pyramid_reproject(
     ----------
     ds : xarray.Dataset
         The dataset to create a multiscale pyramid of.
+    projection : str, optional
+        The projection to use. Default is 'web-mercator'.
     levels : int, optional
         The number of levels to create. If None, the number of levels is
         determined by the number of tiles in the dataset.
@@ -89,7 +94,6 @@ def pyramid_reproject(
     """
 
     import rioxarray  # noqa: F401
-    from rasterio.transform import Affine
     from rasterio.warp import Resampling
 
     # multiscales spec
@@ -110,6 +114,8 @@ def pyramid_reproject(
     else:
         resampling_dict = resampling
 
+    projection_model = Projection(name=projection)
+
     # set up pyramid
     plevels = {}
 
@@ -117,13 +123,11 @@ def pyramid_reproject(
     for level in range(levels):
         lkey = str(level)
         dim = 2**level * pixels_per_tile
-        dst_transform = Affine.translation(-20026376.39, 20048966.10) * Affine.scale(
-            (20026376.39 * 2) / dim, -(20048966.10 * 2) / dim
-        )
+        dst_transform = projection_model.transform(dim=dim)
 
         def reproject(da, var):
             return da.rio.reproject(
-                'EPSG:3857',
+                projection_model._crs,
                 resampling=Resampling[resampling_dict[var]],
                 shape=(dim, dim),
                 transform=dst_transform,
