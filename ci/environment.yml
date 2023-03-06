@@ -10,6 +10,7 @@ dependencies:
   - numpy
   - pip
   - pooch
+  - pydantic>=1.10
   - pytest
   - pytest-cov
   - pytest-mypy
@@ -21,3 +22,4 @@ dependencies:
   - xarray-datatree>=0.0.11
   - xesmf
   - zarr
+  - cf_xarray>=0.8.0
