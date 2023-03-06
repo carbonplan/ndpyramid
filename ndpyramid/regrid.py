@@ -7,6 +7,7 @@ import datatree as dt
 import numpy as np
 import xarray as xr
 
+from .common import Projection
 from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
 
 
@@ -62,25 +63,20 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128, projection:typing.Liter
         - "lat_b": latitude bounds for grid cell
         - "lon_b": longitude bounds for grid cell
     """
-    from pyproj import Proj
-    from rasterio.transform import Affine
 
-
-    supported_projections = ('web-mercator', 'equidistant-cylindrical')
-    if projection not in supported_projections:
-        raise ValueError(f'Projection {projection} not supported. Must be one of {supported_projections}')
+    projection_model = Projection(name=projection)
 
     dim = (2**level) * pixels_per_tile
 
-    if projection == 'equidistant-cylindrical':
-        p = Proj('EPSG:4326')
-        transform = Affine.translation(-180, 90) * Affine.scale(360 / dim, -180 / dim)
+    transform = projection_model.transform(dim=dim)
+
+    if projection_model.name == 'equidistant-cylindrical':
         title='Equidistant Cylindrical Grid'
 
-    elif projection == 'web-mercator':
-        p = Proj('EPSG:3857')
-        transform = Affine.translation(-20026376.39, 20048966.10) * Affine.scale((20026376.39 * 2) / dim, -(20048966.10 * 2) / dim)
+    elif projection_model.name == 'web-mercator':
         title='Web Mercator Grid'
+
+    p = projection_model._proj
 
 
     grid_shape = (dim, dim)
@@ -184,6 +180,7 @@ def generate_weights_pyramid(
 
 def pyramid_regrid(
     ds: xr.Dataset,
+    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     target_pyramid: dt.DataTree = None,
     levels: int = None,
     weights_pyramid: dt.DataTree = None,
@@ -192,7 +189,7 @@ def pyramid_regrid(
     regridder_apply_kws: dict = None,
     other_chunks: dict = None,
     pixels_per_tile: int = 128,
-    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator'
+
 ) -> dt.DataTree:
     """Make a pyramid using xesmf's regridders
 
@@ -200,6 +197,8 @@ def pyramid_regrid(
     ----------
     ds : xr.Dataset
         Input dataset
+     projection : str, optional
+        Projection to use for the grid, by default 'web-mercator'
     target_pyramid : dt.DataTree, optional
         Target grids, if not provided, they will be generated, by default None
     levels : int, optional
@@ -217,8 +216,6 @@ def pyramid_regrid(
         Chunks for non-spatial dims to pass to :py:meth:`~xr.Dataset.chunk`. Default is None
     pixels_per_tile : int, optional
         Number of pixels per tile, by default 128
-    projection : str, optional
-        Projection to use for the grid, by default 'web-mercator'
 
     Returns
     -------
