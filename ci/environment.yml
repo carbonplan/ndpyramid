@@ -11,6 +11,7 @@ dependencies:
   - pip
   - pooch
   - pydantic>=1.10
+  - pyproj
   - pytest
   - pytest-cov
   - pytest-mypy
