@@ -46,7 +46,7 @@ python -m pip install -e .
 
 # usage
 
-Ndpyramid provides a set of utilites for creating pyramids with standardized metadata.
+Ndpyramid provides a set of utilities for creating pyramids with standardized metadata.
 The example below demonstrates the usage of the `pyramid_coarsen` and `pyramid_reproject`
 utilities. Check out [this](https://github.com/carbonplan/ndpyramid/blob/main/notebooks/demo.ipynb)
 Jupyter Notebook for a complete demonstration.
@@ -56,7 +56,7 @@ import xarray as xr
 import rioxarray
 from ndpyramid import pyramid_coarsen, pyramid_reproject
 
-# load a sampel xarray.Dataset
+# load a sample xarray.Dataset
 ds = xr.tutorial.load_dataset('air_temperature')
 
 # make a coarsened pyramid
