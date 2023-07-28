@@ -7,9 +7,9 @@ import datatree as dt
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
-from common import Projection
 
 from ._version import __version__
+from .common import Projection
 
 # from netCDF4 and netCDF4-python
 default_fillvals = {
