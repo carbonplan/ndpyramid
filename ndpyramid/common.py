@@ -22,7 +22,10 @@ class Projection(pydantic.BaseModel):
 
 
         if self.name == 'web-mercator':
-            return rasterio.transform.Affine.translation(-20026376.39, 20048966.10) * rasterio.transform.Affine.scale((20026376.39 * 2) / dim, -(20048966.10 * 2) / dim)
+            # set up the transformation matrix for the web-mercator projection such that the data conform
+            # to the slippy-map tiles assumed boundaries. See https://github.com/carbonplan/ndpyramid/pull/70
+            # for detailed on calculating the parameters.
+            return rasterio.transform.Affine.translation(-20037508.342789244, 20037508.342789248) * rasterio.transform.Affine.scale((20037508.342789244 * 2) / dim, -(20037508.342789248 * 2) / dim)
         elif self.name == 'equidistant-cylindrical':
             # set up the transformation matrix that maps between the Equidistant Cylindrical projection
             # and the latitude-longitude projection. The Affine.translation function moves the origin
