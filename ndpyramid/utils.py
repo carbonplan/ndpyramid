@@ -9,6 +9,7 @@ import numpy.typing as npt
 import xarray as xr
 
 from ._version import __version__
+from .common import Projection
 
 # from netCDF4 and netCDF4-python
 default_fillvals = {
@@ -114,7 +115,7 @@ def set_zarr_encoding(
 
 
 def add_metadata_and_zarr_encoding(
-    pyramid: dt.DataTree, *, levels: int, other_chunks: dict = None, pixels_per_tile: int = 128
+    pyramid: dt.DataTree, *, levels: int, other_chunks: dict = None, pixels_per_tile: int = 128, projection: Projection = None
 ) -> dt.DataTree:
 
     '''Postprocess data pyramid. Adds multiscales metadata and sets Zarr encoding
@@ -129,6 +130,8 @@ def add_metadata_and_zarr_encoding(
         Chunks for non-spatial dims
     pixels_per_tile : int
         Number of pixels per tile
+    projection: Projection
+        Projection model of the pyramids
 
     Returns
     -------
@@ -142,7 +145,8 @@ def add_metadata_and_zarr_encoding(
     for level in range(levels):
         slevel = str(level)
         pyramid.ds.attrs['multiscales'][0]['datasets'][level]['pixels_per_tile'] = pixels_per_tile
-
+        if projection:
+            pyramid.ds.attrs['multiscales'][0]['datasets'][level]['crs'] = projection._crs
         # set dataset chunks
         pyramid[slevel].ds = pyramid[slevel].ds.chunk(chunks)
 

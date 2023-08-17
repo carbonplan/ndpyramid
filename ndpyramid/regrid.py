@@ -112,7 +112,7 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128, projection:typing.Liter
             'lat_b': xr.DataArray(lat_b, dims=['y_b', 'x_b']),
             'lon_b': xr.DataArray(lon_b, dims=['y_b', 'x_b']),
         },
-        attrs=dict(title=title, crs=str(p.crs), Convensions='CF-1.8'),
+        attrs=dict(title=title, Conventions='CF-1.8'),
     )
 
 
@@ -197,7 +197,7 @@ def pyramid_regrid(
     ----------
     ds : xr.Dataset
         Input dataset
-     projection : str, optional
+    projection : str, optional
         Projection to use for the grid, by default 'web-mercator'
     target_pyramid : dt.DataTree, optional
         Target grids, if not provided, they will be generated, by default None
@@ -283,7 +283,7 @@ def pyramid_regrid(
     pyramid = dt.DataTree.from_dict(plevels)
 
     pyramid = add_metadata_and_zarr_encoding(
-        pyramid, levels=levels, other_chunks=other_chunks, pixels_per_tile=pixels_per_tile
+        pyramid, levels=levels, other_chunks=other_chunks, pixels_per_tile=pixels_per_tile, projection=Projection(name=projection)
     )
 
     return pyramid
