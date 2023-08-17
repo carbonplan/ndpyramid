@@ -155,6 +155,6 @@ def pyramid_reproject(
     pyramid = dt.DataTree.from_dict(plevels)
 
     pyramid = add_metadata_and_zarr_encoding(
-        pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks
+        pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks, projection=projection_model
     )
     return pyramid

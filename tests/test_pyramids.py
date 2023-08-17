@@ -29,6 +29,7 @@ def test_reprojected_pyramid(temperature):
     pyramid = pyramid_reproject(temperature, levels=2)
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels
+    assert pyramid.ds.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
     pyramid.to_zarr(MemoryStore())
 
 
@@ -67,7 +68,7 @@ def test_make_grid_ds(projection):
     grid = make_grid_ds(0, pixels_per_tile=8, projection=projection)
     lon_vals = grid.lon_b.values
     assert np.all((lon_vals[-1, :] - lon_vals[0, :]) < 0.001)
-    assert grid.attrs['crs'] == 'EPSG:3857' if projection == 'web-mercator' else 'EPSG:4326'
+    assert grid.attrs['title'] == 'Web Mercator Grid' if projection == 'web-mercator' else 'Equidistant Cylindrical Grid'
 
 @pytest.mark.parametrize('levels', [1, 2])
 @pytest.mark.parametrize('method', ['bilinear', 'conservative'])
