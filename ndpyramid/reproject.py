@@ -1,0 +1,157 @@
+from __future__ import annotations  # noqa: F401
+
+import typing
+from collections import defaultdict
+
+import datatree as dt
+import xarray as xr
+from rasterio.warp import Resampling
+
+from .common import Projection
+from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
+
+
+def _define_spec(
+    levels: int,
+    pixels_per_tile: int
+):
+    # multiscales spec
+    save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
+    return {
+        'multiscales': multiscales_template(
+            datasets=[{'path': str(i)} for i in range(levels)],
+            type='reduce',
+            method='pyramid_reproject',
+            version=get_version(),
+            kwargs=save_kwargs,
+        )
+    }
+
+def _da_reproject(da, *, dim, crs, resampling, transform):
+    return da.rio.reproject(
+        crs,
+        resampling=resampling,
+        shape=(dim, dim),
+        transform=transform,
+    )
+
+def level_reproject(
+    ds: xr.Dataset,
+    *,
+    projection_model: Projection,
+    level: int,
+    pixels_per_tile: int,
+    resampling_dict: dict,
+    extra_dim: str = None,
+) -> xr.Dataset:
+
+    """Create a level of a multiscale pyramid of a dataset via reprojection.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset to create a multiscale pyramid of.
+    projection : Projection
+        The projection model to use.
+    level : int
+        The level of the pyramid to create.
+    pixels_per_tile : int, optional
+        Number of pixels per tile
+    resampling : dict
+        Rasterio warp resampling method to use. Keys are variable names and values are warp resampling methods.
+    extra_dim : str, optional
+        The name of the extra dimension to iterate over. Default is None.
+
+    Returns
+    -------
+    xr.Dataset
+        The multiscale pyramid level.
+
+    """
+
+    dim = 2**level * pixels_per_tile
+    dst_transform = projection_model.transform(dim=dim)
+
+    # create the data array for each level
+    ds_level = xr.Dataset(attrs=ds.attrs)
+    for k, da in ds.items():
+        if len(da.shape) == 4:
+            # if extra_dim is not specified, raise an error
+            if extra_dim is None:
+                raise ValueError("must specify 'extra_dim' to iterate over 4d data")
+            da_all = []
+            for index in ds[extra_dim]:
+                # reproject each index of the 4th dimension
+                da_reprojected = _da_reproject(da.sel({extra_dim: index}), dim=dim, crs=projection_model._crs, resampling=Resampling[resampling_dict[k]], transform=dst_transform)
+                da_all.append(da_reprojected)
+            ds_level[k] = xr.concat(da_all, ds[extra_dim])
+        else:
+            # if the data array is not 4D, just reproject it
+            ds_level[k] = _da_reproject(da, dim=dim, crs=projection_model._crs, resampling=Resampling[resampling_dict[k]], transform=dst_transform)
+    return ds_level
+
+
+def pyramid_reproject(
+    ds: xr.Dataset,
+    *,
+    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    levels: int = None,
+    pixels_per_tile: int = 128,
+    other_chunks: dict = None,
+    resampling: str | dict = 'average',
+    extra_dim: str = None,
+) -> dt.DataTree:
+
+    """Create a multiscale pyramid of a dataset via reprojection.
+
+    Parameters
+    ----------
+    ds : xarray.Dataset
+        The dataset to create a multiscale pyramid of.
+    projection : str, optional
+        The projection to use. Default is 'web-mercator'.
+    levels : int, optional
+        The number of levels to create. If None, the number of levels is
+        determined by the number of tiles in the dataset.
+    pixels_per_tile : int, optional
+        Number of pixels per tile, by default 128
+    other_chunks : dict
+        Chunks for non-spatial dims to pass to :py:meth:`~xr.Dataset.chunk`. Default is None
+    resampling : str or dict, optional
+        Rasterio warp resampling method to use. Default is 'average'.
+        If a dict, keys are variable names and values are warp resampling methods.
+    extra_dim : str, optional
+        The name of the extra dimension to iterate over. Default is None.
+
+    Returns
+    -------
+    dt.DataTree
+        The multiscale pyramid.
+
+    """
+
+    attrs = _define_spec(levels, pixels_per_tile)
+
+    # Convert resampling from string to dictionary if necessary
+    if isinstance(resampling, str):
+        resampling_dict = defaultdict(lambda: resampling)
+    else:
+        resampling_dict = resampling
+
+    projection_model = Projection(name=projection)
+
+    # set up pyramid
+    plevels = {}
+
+    # pyramid data
+    for level in range(levels):
+        plevels[str(level)] = level_reproject(ds, projection_model=projection_model, level=level, pixels_per_tile=pixels_per_tile, resampling_dict=resampling_dict, extra_dim=extra_dim)
+
+    # create the final multiscale pyramid
+    plevels['/'] = xr.Dataset(attrs=attrs)
+    pyramid = dt.DataTree.from_dict(plevels)
+
+    pyramid = add_metadata_and_zarr_encoding(
+        pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks, projection=projection_model
+    )
+    return pyramid
