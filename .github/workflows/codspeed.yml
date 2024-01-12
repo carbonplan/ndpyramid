@@ -1,0 +1,39 @@
+name: codspeed-benchmarks
+
+on:
+  # Run on pushes to the main branch
+  push:
+    branches:
+      - "main"
+  # Run on pull requests
+  pull_request:
+  # `workflow_dispatch` allows CodSpeed to trigger backtest
+  # performance analysis in order to generate initial data.
+  workflow_dispatch:
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Conda environment from environment.yml
+        uses: mamba-org/setup-micromamba@v1
+        with:
+          # environment-file is not assumed anymore
+          environment-file: ci/environment.yml
+          create-args: >-
+            python=3.10
+          # now called cache-environment
+          cache-environment: true
+
+      - name: Install package
+        run: |
+          python -m pip install . --no-deps
+      - name: Conda list information
+        run: |
+          conda env list
+          conda list
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v2
