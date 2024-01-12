@@ -17,7 +17,7 @@ class Projection(pydantic.BaseModel):
         self._crs = epsg_codes[self.name]
         self._proj = pyproj.Proj(self._crs)
 
-    @pydantic.validate_arguments
+    @pydantic.validate_call
     def transform(self, *, dim:int) -> rasterio.transform.Affine:
 
 

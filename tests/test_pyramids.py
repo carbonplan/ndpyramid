@@ -14,9 +14,9 @@ def temperature():
     return ds
 
 
-def test_xarray_coarsened_pyramid(temperature):
+def test_xarray_coarsened_pyramid(temperature, benchmark):
     factors = [4, 2, 1]
-    pyramid = pyramid_coarsen(temperature, dims=('lat', 'lon'), factors=factors, boundary='trim')
+    pyramid = benchmark(lambda:  pyramid_coarsen(temperature, dims=('lat', 'lon'), factors=factors, boundary='trim'))
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == len(factors)
     pyramid.to_zarr(MemoryStore())

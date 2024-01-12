@@ -10,6 +10,7 @@ dependencies:
   - numpy
   - pip
   - pooch
+  - pre-commit
   - pydantic>=1.10
   - pyproj
   - pytest
@@ -24,3 +25,5 @@ dependencies:
   - xesmf
   - zarr
   - cf_xarray>=0.8.0
+  - pip:
+      - pytest-codspeed
