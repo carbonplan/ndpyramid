@@ -37,3 +37,6 @@ jobs:
           conda list
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v2
+        with:
+          run: |
+            python -m pytest --codspeed
