@@ -21,24 +21,28 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - uses: conda-incubator/setup-miniconda@v3
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3.0.1
         with:
-          environment-file: ci/environment.yml
-          activate-environment: ndpyramid
-          python-version: "3.10"
-          auto-activate-base: false
+          auto-activate-base: true
+          activate-environment: "" # base environment
+          channels: conda-forge,nodefaults
+          channel-priority: strict
 
-      - name: Install package
+      - name: Install dependencies
         run: |
           # $CONDA is an environment variable pointing to the root of the miniconda directory
           # Preprend $CONDA/bin to $PATH so that conda's python is used over system python
           echo $CONDA/bin >> $GITHUB_PATH
-          conda env list
-          conda list
+          conda install --solver=libmamba dask python=3.10 \
+                        esmpy>=8.2.0 mpich netcdf4 numpy pip pooch pydantic>=1.10 pyproj \
+                        pytest pytest-cov pytest-mypy rasterio rioxarray scipy sparse>=0.13.0 \
+                        xarray xarray-datatree>=0.0.11 xesmf zarr cf_xarray>=0.8.0
+          python -m pip install -U pytest-codspeed setuptools
           python -m pip install -e . --no-deps
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v2
+        uses: CodSpeedHQ/action@v2.0.2
         with:
           run: |
             conda list
