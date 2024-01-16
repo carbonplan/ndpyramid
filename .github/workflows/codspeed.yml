@@ -40,3 +40,4 @@ jobs:
         with:
           run: |
             python -m pytest --codspeed
+          shell: micromamba-shell {0}
