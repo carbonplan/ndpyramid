@@ -73,6 +73,7 @@ def test_make_grid_ds(projection, benchmark):
 @pytest.mark.parametrize('levels', [1, 2])
 @pytest.mark.parametrize('method', ['bilinear', 'conservative'])
 def test_generate_weights_pyramid(temperature, levels, method, benchmark):
+    pytest.importorskip('xesmf')
     weights_pyramid = benchmark(lambda:  generate_weights_pyramid(temperature.isel(time=0), levels, method=method))
     assert weights_pyramid.ds.attrs['levels'] == levels
     assert weights_pyramid.ds.attrs['regrid_method'] == method
