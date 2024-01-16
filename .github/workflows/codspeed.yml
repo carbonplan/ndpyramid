@@ -21,8 +21,9 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v3
         with:
           environment-file: ci/environment.yml
-          auto-activate-base: true
-          activate-environment: ""
+          activate-environment: ndpyramid
+          python-version: "3.10"
+          auto-activate-base: false
 
       - name: Install package
         run: |
