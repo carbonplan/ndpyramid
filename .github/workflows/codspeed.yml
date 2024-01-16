@@ -26,12 +26,9 @@ jobs:
 
       - name: Install package
         run: |
-          python -m pip install -e . --no-deps
-
-      - name: Conda list information
-        run: |
           conda env list
           conda list
+          python -m pip install -e . --no-deps
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v2
