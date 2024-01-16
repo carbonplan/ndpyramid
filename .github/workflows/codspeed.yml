@@ -30,6 +30,9 @@ jobs:
 
       - name: Install package
         run: |
+          # $CONDA is an environment variable pointing to the root of the miniconda directory
+          # Preprend $CONDA/bin to $PATH so that conda's python is used over system python
+          echo $CONDA/bin >> $GITHUB_PATH
           conda env list
           conda list
           python -m pip install -e . --no-deps
