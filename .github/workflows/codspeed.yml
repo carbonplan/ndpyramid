@@ -41,5 +41,6 @@ jobs:
         uses: CodSpeedHQ/action@v2
         with:
           run: |
+            conda list
             python -c "import ndpyramid; print(ndpyramid.__version__)"
             python -m pytest --codspeed
