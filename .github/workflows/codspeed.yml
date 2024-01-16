@@ -15,8 +15,8 @@ jobs:
   benchmarks:
     runs-on: ubuntu-latest
     defaults:
-    run:
-      shell: bash -el {0}
+      run:
+        shell: bash -el {0}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
