@@ -6,10 +6,6 @@ ndpyramid
 A small utility for generating ND array pyramids using Xarray and Zarr.
 
 .. toctree::
-   :hidden:
-   self
-
-.. toctree::
     :maxdepth: 1
     :hidden:
     :caption: Getting Started
