@@ -11,22 +11,6 @@ from .common import Projection
 from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
 
 
-def _define_spec(
-    levels: int,
-    pixels_per_tile: int
-):
-    # multiscales spec
-    save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
-    return {
-        'multiscales': multiscales_template(
-            datasets=[{'path': str(i)} for i in range(levels)],
-            type='reduce',
-            method='pyramid_reproject',
-            version=get_version(),
-            kwargs=save_kwargs,
-        )
-    }
-
 def _da_reproject(da, *, dim, crs, resampling, transform):
     return da.rio.reproject(
         crs,
@@ -71,7 +55,16 @@ def level_reproject(
     -------
     Pyramid generation by level is experimental and subject to change.
     """
-    attrs = _define_spec(level, pixels_per_tile)
+    save_kwargs = {'pixels_per_tile': pixels_per_tile}
+    attrs = {
+        'multiscales': multiscales_template(
+            datasets=[{'path': '.', 'level': level}],
+            type='reduce',
+            method='pyramid_reproject',
+            version=get_version(),
+            kwargs=save_kwargs,
+        )
+    }
     dim = 2**level * pixels_per_tile
     dst_transform = projection_model.transform(dim=dim)
 
@@ -133,8 +126,16 @@ def pyramid_reproject(
         The multiscale pyramid.
 
     """
-
-    attrs = _define_spec(levels, pixels_per_tile)
+    save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
+    attrs = {
+        'multiscales': multiscales_template(
+            datasets=[{'path': str(i)} for i in range(levels)],
+            type='reduce',
+            method='pyramid_reproject',
+            version=get_version(),
+            kwargs=save_kwargs,
+        )
+    }
 
     # Convert resampling from string to dictionary if necessary
     if isinstance(resampling, str):
