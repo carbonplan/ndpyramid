@@ -67,8 +67,11 @@ def level_reproject(
     xr.Dataset
         The multiscale pyramid level.
 
+    Warning
+    -------
+    Pyramid generation by level is experimental and subject to change.
     """
-
+    attrs = _define_spec(level, pixels_per_tile)
     dim = 2**level * pixels_per_tile
     dst_transform = projection_model.transform(dim=dim)
 
@@ -88,6 +91,7 @@ def level_reproject(
         else:
             # if the data array is not 4D, just reproject it
             ds_level[k] = _da_reproject(da, dim=dim, crs=projection_model._crs, resampling=Resampling[resampling_dict[k]], transform=dst_transform)
+    ds_level.attrs['multiscales'] = attrs['multiscales']
     return ds_level
 
 
