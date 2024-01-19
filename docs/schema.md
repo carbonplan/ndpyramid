@@ -71,7 +71,7 @@ In addition to following the quadtree pyramid structure and metadata schema, the
 - Consistent chunk size across pyramid levels (128, 256, or 512 are recommended)
 - [zlib](https://numcodecs.readthedocs.io/en/stable/zlib.html) or [gzip](https://numcodecs.readthedocs.io/en/stable/gzip.html) compression
 - Web Mercator (EPSG:3857) or Equidistant Cylindrical (EPSG:4326) projection
-- The data types must be supported by [zarr-js](https://github.com/freeman-lab/zarr-js). The following are supported as of `v3.3.0` for Zarr v2:
+- Data types supported by [zarr-js](https://github.com/freeman-lab/zarr-js). The following are supported as of `v3.3.0` for Zarr v2:
 
   ```{code}
   '<i1': Int8Array,
