@@ -60,7 +60,7 @@ Metadata about the pyramids is stored in the `multiscales` attribute of the Xarr
 }
 ```
 
-If the `"crs"` attribute is not included, the pyramid levels are assumed to be in the Web Mercator projection.
+Currently, `@carbonplan/maps` does not rely on the `"crs"` attribute, but future releases may determine the projection based on that attribute (assuming Web Mercator projection if it is not provided).
 
 In addition, the mapping toolkit relies on the `_ARRAY_DIMENSIONS` attribute introduced by Xarray, which stores the dimension names.
 
@@ -71,5 +71,21 @@ In addition to following the quadtree pyramid structure and metadata schema, the
 - Consistent chunk size across pyramid levels (128, 256, or 512 are recommended)
 - [zlib](https://numcodecs.readthedocs.io/en/stable/zlib.html) or [gzip](https://numcodecs.readthedocs.io/en/stable/gzip.html) compression
 - Web Mercator (EPSG:3857) or Equidistant Cylindrical (EPSG:4326) projection
+- The data types must be supported by [zarr-js](https://github.com/freeman-lab/zarr-js). The following are supported as of `v3.3.0` for Zarr v2:
+
+  ```{code}
+  '<i1': Int8Array,
+  '<u1': Uint8Array,
+  '|b1': BoolArray,
+  '|u1': Uint8Array,
+  '<i2': Int16Array,
+  '<u2': Uint16Array,
+  '<i4': Int32Array,
+  '<u4': Uint32Array,
+  '<f4': Float32Array,
+  '<f8': Float64Array,
+  '<U': StringArray,
+  '|S': StringArray,
+  ```
 
 We recommend exploring the [`@carbonplan/maps` repository](https://github.com/carbonplan/maps), [`@carbonplan/maps` documentation](https://docs.carbonplan.org/maps), and [Zarr visualization report](https://nasa-impact.github.io/zarr-visualization-report/) for more information about CarbonPlan's approach to interactive multi-dimensional data-driven web maps.
