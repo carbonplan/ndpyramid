@@ -10,7 +10,7 @@ In fact, earlier releases of the toolkit only generated and supported Web Mercat
 
 ## Pyramid schema
 
-While the [map zoom level quadtree structure](https://docs.mapbox.com/help/glossary/zoom-level/#zoom-level-quadtrees) has been used for many years, there was no convention for storing the quadtree pyramids in Xarray and Zarr when `@carbonplan/maps` and `ndpyramid` were created (although parallel development occurred in the microscopy and other communities). Therefore, we created a pyramid and metadata schema for `ndpyramid`. The resulting Zarr store for a dataset with one `tavg` data variable would look like:
+While the [map zoom level quadtree structure](https://docs.mapbox.com/help/glossary/zoom-level/#zoom-level-quadtrees) has been used for many years, there was no convention for storing the quadtree pyramids in Xarray and Zarr when we started work on this toolkit (although parallel development occurred in the microscopy and other communities). Therefore, we created a pyramid and metadata schema for `ndpyramid`. The resulting Zarr store for a dataset with one `tavg` data variable would look like:
 
 ```{code}
 /
@@ -28,7 +28,7 @@ While the [map zoom level quadtree structure](https://docs.mapbox.com/help/gloss
 ...
 ```
 
-Note the quadrupling of the number of chunks as zoom level increases. This, combined with the global extent of individual levels and specific projection, allows inference of the placement of chunks on a map based on the chunk index.
+Note the quadrupling of the number of chunks as zoom level increases. This, combined with the global extent of individual levels and specific projection, allows inference of the placement of chunks on a web map based on the chunk index.
 
 Metadata about the pyramids is stored in the `multiscales` attribute of the Xarray DataTree or Zarr store:
 
@@ -66,10 +66,10 @@ In addition, the mapping toolkit relies on the `_ARRAY_DIMENSIONS` attribute int
 
 ## Pyramids for @carbonplan/maps
 
-In addition following the ndpyramid metadata schema described above, the pyramids currently must also meet the following requirements for use with `@carbonplan/maps`:
+In addition to following the quadtree pyramid structure and metadata schema, the pyramids currently must also meet the following requirements for use with `@carbonplan/maps`:
 
 - Consistent chunk size across pyramid levels (128, 256, or 512 are recommended)
-- [zlib](https://numcodecs.readthedocs.io/en/stable/zlib.html) or [gzip](https://numcodecs.readthedocs.io/en/stable/gzip.html) compression.
+- [zlib](https://numcodecs.readthedocs.io/en/stable/zlib.html) or [gzip](https://numcodecs.readthedocs.io/en/stable/gzip.html) compression
 - Web Mercator (EPSG:3857) or Equidistant Cylindrical (EPSG:4326) projection
 
 We recommend exploring the [`@carbonplan/maps` repository](https://github.com/carbonplan/maps), [`@carbonplan/maps` documentation](https://docs.carbonplan.org/maps), and [Zarr visualization report](https://nasa-impact.github.io/zarr-visualization-report/) for more information about CarbonPlan's approach to interactive multi-dimensional data-driven web maps.
