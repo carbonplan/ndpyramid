@@ -26,3 +26,4 @@ A small utility for generating ND array pyramids using Xarray and Zarr.
     :caption: Reference
 
     API <api>
+    schema
