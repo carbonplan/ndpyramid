@@ -22,10 +22,10 @@ def _da_reproject(da, *, dim, crs, resampling, transform):
 def level_reproject(
     ds: xr.Dataset,
     *,
-    projection_model: Projection,
+    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     level: int,
-    pixels_per_tile: int,
-    resampling_dict: dict,
+    pixels_per_tile: int = 128,
+    resampling: str | dict = 'average',
     extra_dim: str = None,
 ) -> xr.Dataset:
 
@@ -35,8 +35,8 @@ def level_reproject(
     ----------
     ds : xarray.Dataset
         The dataset to create a multiscale pyramid of.
-    projection : Projection
-        The projection model to use.
+    projection : str, optional
+        The projection to use. Default is 'web-mercator'.
     level : int
         The level of the pyramid to create.
     pixels_per_tile : int, optional
@@ -66,7 +66,14 @@ def level_reproject(
         )
     }
     dim = 2**level * pixels_per_tile
+    projection_model = Projection(name=projection)
     dst_transform = projection_model.transform(dim=dim)
+
+    # Convert resampling from string to dictionary if necessary
+    if isinstance(resampling, str):
+        resampling_dict = defaultdict(lambda: resampling)
+    else:
+        resampling_dict = resampling
 
     # create the data array for each level
     ds_level = xr.Dataset(attrs=ds.attrs)
@@ -137,24 +144,18 @@ def pyramid_reproject(
         )
     }
 
-    # Convert resampling from string to dictionary if necessary
-    if isinstance(resampling, str):
-        resampling_dict = defaultdict(lambda: resampling)
-    else:
-        resampling_dict = resampling
-
-    projection_model = Projection(name=projection)
-
     # set up pyramid
     plevels = {}
 
     # pyramid data
     for level in range(levels):
-        plevels[str(level)] = level_reproject(ds, projection_model=projection_model, level=level, pixels_per_tile=pixels_per_tile, resampling_dict=resampling_dict, extra_dim=extra_dim)
+        plevels[str(level)] = level_reproject(ds, projection=projection, level=level, pixels_per_tile=pixels_per_tile, resampling=resampling, extra_dim=extra_dim)
 
     # create the final multiscale pyramid
     plevels['/'] = xr.Dataset(attrs=attrs)
     pyramid = dt.DataTree.from_dict(plevels)
+
+    projection_model = Projection(name=projection)
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks, projection=projection_model
