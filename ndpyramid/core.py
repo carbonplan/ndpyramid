@@ -7,7 +7,7 @@ import datatree as dt
 import xarray as xr
 
 from .common import Projection
-from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
+from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
 
 
 def pyramid_coarsen(
@@ -48,7 +48,7 @@ def pyramid_coarsen(
     for key, factor in enumerate(factors):
         # merge dictionary via union operator
         kwargs |= {d: factor for d in dims}
-        plevels[str(key)] = ds.coarsen(**kwargs).mean()
+        plevels[str(key)] = ds.coarsen(**kwargs).mean() # type: ignore
 
     plevels['/'] = xr.Dataset(attrs=attrs)
     return dt.DataTree.from_dict(plevels)
@@ -96,6 +96,9 @@ def pyramid_reproject(
     import rioxarray  # noqa: F401
     from rasterio.warp import Resampling
 
+    if not levels:
+        levels = get_levels(ds)
+
     # multiscales spec
     save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
     attrs = {
@@ -108,9 +111,10 @@ def pyramid_reproject(
         )
     }
 
+
     # Convert resampling from string to dictionary if necessary
     if isinstance(resampling, str):
-        resampling_dict = defaultdict(lambda: resampling)
+        resampling_dict:dict = defaultdict(lambda: resampling)
     else:
         resampling_dict = resampling
 
