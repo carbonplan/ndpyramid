@@ -8,7 +8,7 @@ import xarray as xr
 from rasterio.warp import Resampling
 
 from .common import Projection
-from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_template
+from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
 
 
 def _da_reproject(da, *, dim, crs, resampling, transform):
@@ -71,7 +71,7 @@ def level_reproject(
 
     # Convert resampling from string to dictionary if necessary
     if isinstance(resampling, str):
-        resampling_dict = defaultdict(lambda: resampling)
+        resampling_dict: dict = defaultdict(lambda: resampling)
     else:
         resampling_dict = resampling
 
@@ -133,6 +133,8 @@ def pyramid_reproject(
         The multiscale pyramid.
 
     """
+    if not levels:
+        levels = get_levels(ds)
     save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
     attrs = {
         'multiscales': multiscales_template(

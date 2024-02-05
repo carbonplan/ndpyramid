@@ -44,7 +44,7 @@ def pyramid_coarsen(
     for key, factor in enumerate(factors):
         # merge dictionary via union operator
         kwargs |= {d: factor for d in dims}
-        plevels[str(key)] = ds.coarsen(**kwargs).mean()
+        plevels[str(key)] = ds.coarsen(**kwargs).mean()  # type: ignore
 
     plevels['/'] = xr.Dataset(attrs=attrs)
     return dt.DataTree.from_dict(plevels)
