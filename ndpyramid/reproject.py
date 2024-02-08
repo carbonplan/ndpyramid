@@ -19,16 +19,16 @@ def _da_reproject(da, *, dim, crs, resampling, transform):
         transform=transform,
     )
 
+
 def level_reproject(
     ds: xr.Dataset,
     *,
-    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     level: int,
     pixels_per_tile: int = 128,
     resampling: str | dict = 'average',
     extra_dim: str = None,
 ) -> xr.Dataset:
-
     """Create a level of a multiscale pyramid of a dataset via reprojection.
 
     Parameters
@@ -85,12 +85,24 @@ def level_reproject(
             da_all = []
             for index in ds[extra_dim]:
                 # reproject each index of the 4th dimension
-                da_reprojected = _da_reproject(da.sel({extra_dim: index}), dim=dim, crs=projection_model._crs, resampling=Resampling[resampling_dict[k]], transform=dst_transform)
+                da_reprojected = _da_reproject(
+                    da.sel({extra_dim: index}),
+                    dim=dim,
+                    crs=projection_model._crs,
+                    resampling=Resampling[resampling_dict[k]],
+                    transform=dst_transform,
+                )
                 da_all.append(da_reprojected)
             ds_level[k] = xr.concat(da_all, ds[extra_dim])
         else:
             # if the data array is not 4D, just reproject it
-            ds_level[k] = _da_reproject(da, dim=dim, crs=projection_model._crs, resampling=Resampling[resampling_dict[k]], transform=dst_transform)
+            ds_level[k] = _da_reproject(
+                da,
+                dim=dim,
+                crs=projection_model._crs,
+                resampling=Resampling[resampling_dict[k]],
+                transform=dst_transform,
+            )
     ds_level.attrs['multiscales'] = attrs['multiscales']
     return ds_level
 
@@ -98,14 +110,13 @@ def level_reproject(
 def pyramid_reproject(
     ds: xr.Dataset,
     *,
-    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     levels: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
     resampling: str | dict = 'average',
     extra_dim: str = None,
 ) -> dt.DataTree:
-
     """Create a multiscale pyramid of a dataset via reprojection.
 
     Parameters
@@ -151,7 +162,14 @@ def pyramid_reproject(
 
     # pyramid data
     for level in range(levels):
-        plevels[str(level)] = level_reproject(ds, projection=projection, level=level, pixels_per_tile=pixels_per_tile, resampling=resampling, extra_dim=extra_dim)
+        plevels[str(level)] = level_reproject(
+            ds,
+            projection=projection,
+            level=level,
+            pixels_per_tile=pixels_per_tile,
+            resampling=resampling,
+            extra_dim=extra_dim,
+        )
 
     # create the final multiscale pyramid
     plevels['/'] = xr.Dataset(attrs=attrs)
@@ -160,6 +178,10 @@ def pyramid_reproject(
     projection_model = Projection(name=projection)
 
     pyramid = add_metadata_and_zarr_encoding(
-        pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks, projection=projection_model
+        pyramid,
+        levels=levels,
+        pixels_per_tile=pixels_per_tile,
+        other_chunks=other_chunks,
+        projection=projection_model,
     )
     return pyramid

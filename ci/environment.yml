@@ -18,6 +18,7 @@ dependencies:
   - pytest-mypy
   - rasterio
   - rioxarray
+  - s3fs
   - scipy
   - sparse>=0.13.0
   - xarray

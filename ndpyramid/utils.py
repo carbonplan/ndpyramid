@@ -30,8 +30,10 @@ default_fillvals = {
 def get_version() -> str:
     return __version__
 
+
 def get_levels(ds: xr.Dataset) -> int:
     raise NotImplementedError('Automatic determination of number of levels is not yet implemented')
+
 
 def multiscales_template(
     *,
@@ -117,9 +119,13 @@ def set_zarr_encoding(
 
 
 def add_metadata_and_zarr_encoding(
-    pyramid: dt.DataTree, *, levels: int, other_chunks: dict = None, pixels_per_tile: int = 128, projection: Projection = None
+    pyramid: dt.DataTree,
+    *,
+    levels: int,
+    other_chunks: dict = None,
+    pixels_per_tile: int = 128,
+    projection: Projection = None,
 ) -> dt.DataTree:
-
     '''Postprocess data pyramid. Adds multiscales metadata and sets Zarr encoding
 
     Parameters
