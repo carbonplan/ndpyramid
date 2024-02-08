@@ -48,7 +48,7 @@ def pyramid_coarsen(
     for key, factor in enumerate(factors):
         # merge dictionary via union operator
         kwargs |= {d: factor for d in dims}
-        plevels[str(key)] = ds.coarsen(**kwargs).mean() # type: ignore
+        plevels[str(key)] = ds.coarsen(**kwargs).mean()  # type: ignore
 
     plevels['/'] = xr.Dataset(attrs=attrs)
     return dt.DataTree.from_dict(plevels)
@@ -57,14 +57,13 @@ def pyramid_coarsen(
 def pyramid_reproject(
     ds: xr.Dataset,
     *,
-    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     levels: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
     resampling: str | dict = 'average',
     extra_dim: str = None,
 ) -> dt.DataTree:
-
     """Create a multiscale pyramid of a dataset via reprojection.
 
     Parameters
@@ -111,10 +110,9 @@ def pyramid_reproject(
         )
     }
 
-
     # Convert resampling from string to dictionary if necessary
     if isinstance(resampling, str):
-        resampling_dict:dict = defaultdict(lambda: resampling)
+        resampling_dict: dict = defaultdict(lambda: resampling)
     else:
         resampling_dict = resampling
 
@@ -159,6 +157,10 @@ def pyramid_reproject(
     pyramid = dt.DataTree.from_dict(plevels)
 
     pyramid = add_metadata_and_zarr_encoding(
-        pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks, projection=projection_model
+        pyramid,
+        levels=levels,
+        pixels_per_tile=pixels_per_tile,
+        other_chunks=other_chunks,
+        projection=projection_model,
     )
     return pyramid
