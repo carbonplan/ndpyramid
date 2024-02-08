@@ -40,7 +40,11 @@ def _reconstruct_xesmf_weights(ds_w):
     )
 
 
-def make_grid_ds(level: int, pixels_per_tile: int = 128, projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator') -> xr.Dataset:
+def make_grid_ds(
+    level: int,
+    pixels_per_tile: int = 128,
+    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+) -> xr.Dataset:
     """Make a dataset representing a target grid
 
     Parameters
@@ -71,13 +75,12 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128, projection:typing.Liter
     transform = projection_model.transform(dim=dim)
 
     if projection_model.name == 'equidistant-cylindrical':
-        title='Equidistant Cylindrical Grid'
+        title = 'Equidistant Cylindrical Grid'
 
     elif projection_model.name == 'web-mercator':
-        title='Web Mercator Grid'
+        title = 'Web Mercator Grid'
 
     p = projection_model._proj
-
 
     grid_shape = (dim, dim)
     bounds_shape = (dim + 1, dim + 1)
@@ -116,7 +119,10 @@ def make_grid_ds(level: int, pixels_per_tile: int = 128, projection:typing.Liter
     )
 
 
-def make_grid_pyramid(levels: int = 6, projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator') -> dt.DataTree:
+def make_grid_pyramid(
+    levels: int = 6,
+    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+) -> dt.DataTree:
     """helper function to create a grid pyramid for use with xesmf
 
     Parameters
@@ -136,9 +142,11 @@ def make_grid_pyramid(levels: int = 6, projection:typing.Literal['web-mercator',
 
 
 def generate_weights_pyramid(
-    ds_in: xr.Dataset, levels: int, method: str = 'bilinear', regridder_kws: dict = None,
-    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator'
-
+    ds_in: xr.Dataset,
+    levels: int,
+    method: str = 'bilinear',
+    regridder_kws: dict = None,
+    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
 ) -> dt.DataTree:
     """helper function to generate weights for a multiscale regridder
 
@@ -180,7 +188,7 @@ def generate_weights_pyramid(
 
 def pyramid_regrid(
     ds: xr.Dataset,
-    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     target_pyramid: dt.DataTree = None,
     levels: int = None,
     weights_pyramid: dt.DataTree = None,
@@ -189,7 +197,6 @@ def pyramid_regrid(
     regridder_apply_kws: dict = None,
     other_chunks: dict = None,
     pixels_per_tile: int = 128,
-
 ) -> dt.DataTree:
     """Make a pyramid using xesmf's regridders
 
@@ -283,7 +290,11 @@ def pyramid_regrid(
     pyramid = dt.DataTree.from_dict(plevels)
 
     pyramid = add_metadata_and_zarr_encoding(
-        pyramid, levels=levels, other_chunks=other_chunks, pixels_per_tile=pixels_per_tile, projection=Projection(name=projection)
+        pyramid,
+        levels=levels,
+        other_chunks=other_chunks,
+        pixels_per_tile=pixels_per_tile,
+        projection=Projection(name=projection),
     )
 
     return pyramid

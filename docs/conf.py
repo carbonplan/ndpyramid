@@ -27,9 +27,11 @@ release = 'v0.1.0'
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = ['myst_parser',
-            'sphinx.ext.autodoc',
-            'sphinx.ext.autosummary',]
+extensions = [
+    'myst_parser',
+    'sphinx.ext.autodoc',
+    'sphinx.ext.autosummary',
+]
 
 autosummary_generate = True
 
