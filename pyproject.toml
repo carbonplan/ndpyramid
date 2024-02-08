@@ -111,3 +111,7 @@ known-first-party = ["ndpyramid"]
 [tool.pytest.ini_options]
 console_output_style = "count"
 addopts = "--cov=./ --cov-report=xml --verbose"
+
+[tool.mypy]
+ignore_missing_imports = true
+no_implicit_optional = false

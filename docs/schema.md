@@ -69,6 +69,7 @@ In addition, the mapping toolkit relies on the `_ARRAY_DIMENSIONS` attribute int
 In addition to following the quadtree pyramid structure and metadata schema, the pyramids currently must also meet the following requirements for use with `@carbonplan/maps`:
 
 - Consistent chunk size across pyramid levels (128, 256, or 512 are recommended)
+- Storage of non-spatial coordinate arrays in single chunk
 - [zlib](https://numcodecs.readthedocs.io/en/stable/zlib.html) or [gzip](https://numcodecs.readthedocs.io/en/stable/gzip.html) compression
 - Web Mercator (EPSG:3857) or Equidistant Cylindrical (EPSG:4326) projection
 - Data types supported by [zarr-js](https://github.com/freeman-lab/zarr-js). The following are supported as of `v3.3.0` for Zarr v2:

@@ -30,6 +30,8 @@ default_fillvals = {
 def get_version() -> str:
     return __version__
 
+def get_levels(ds: xr.Dataset) -> int:
+    raise NotImplementedError('Automatic determination of number of levels is not yet implemented')
 
 def multiscales_template(
     *,
