@@ -63,6 +63,7 @@ def pyramid_reproject(
     other_chunks: dict = None,
     resampling: str | dict = 'average',
     extra_dim: str = None,
+    clear_attrs: bool = False,
 ) -> dt.DataTree:
     """Create a multiscale pyramid of a dataset via reprojection.
 
@@ -84,6 +85,8 @@ def pyramid_reproject(
         If a dict, keys are variable names and values are warp resampling methods.
     extra_dim : str, optional
         The name of the extra dimension to iterate over. Default is None.
+    clear_attrs : bool, False
+        Clear the attributes of the DataArrays within the multiscale pyramid. Default is False.
 
     Returns
     -------
@@ -138,6 +141,8 @@ def pyramid_reproject(
         # create the data array for each level
         plevels[lkey] = xr.Dataset(attrs=ds.attrs)
         for k, da in ds.items():
+            if clear_attrs:
+                da.attrs.clear()
             if len(da.shape) == 4:
                 # if extra_dim is not specified, raise an error
                 if extra_dim is None:
