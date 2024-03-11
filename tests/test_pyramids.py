@@ -32,6 +32,7 @@ def test_reprojected_pyramid(temperature, benchmark):
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels
     assert pyramid.ds.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
+    assert np.isnan(pyramid['0'].air.isel(time=0, x=0, y=0).values)
     pyramid.to_zarr(MemoryStore())
 
 
