@@ -4,6 +4,7 @@ import typing
 from collections import defaultdict
 
 import datatree as dt
+import numpy as np
 import xarray as xr
 
 from .common import Projection
@@ -131,12 +132,14 @@ def pyramid_reproject(
         dst_transform = projection_model.transform(dim=dim)
 
         def reproject(da, var):
-            return da.rio.reproject(
+            da.encoding['_FillValue'] = np.nan
+            da = da.rio.reproject(
                 projection_model._crs,
                 resampling=Resampling[resampling_dict[var]],
                 shape=(dim, dim),
                 transform=dst_transform,
             )
+            return da
 
         # create the data array for each level
         plevels[lkey] = xr.Dataset(attrs=ds.attrs)
