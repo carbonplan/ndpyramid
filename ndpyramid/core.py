@@ -4,12 +4,14 @@ import typing
 from collections import defaultdict
 
 import datatree as dt
+import numpy as np
 import xarray as xr
 
 from ._version import __version__
 from .common import Projection
 from .utils import (
     add_metadata_and_zarr_encoding,
+    get_levels,
     get_version,
     multiscales_template,
     set_zarr_encoding,
@@ -54,25 +56,23 @@ def pyramid_coarsen(
     for key, factor in enumerate(factors):
         # merge dictionary via union operator
         kwargs |= {d: factor for d in dims}
-        plevels[str(key)] = ds.coarsen(**kwargs).mean()
+        plevels[str(key)] = ds.coarsen(**kwargs).mean()  # type: ignore
 
     plevels['/'] = xr.Dataset(attrs=attrs)
     return dt.DataTree.from_dict(plevels)
-
 
 
 # single_level branch
 def reproject_single_level(
     ds: xr.Dataset,
     *,
-    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     level: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
     resampling: str | dict = 'average',
     extra_dim: str = None,
 ) -> dt.DataTree:
-
 
     import rioxarray  # noqa: F401
     from rasterio.warp import Resampling
@@ -113,6 +113,7 @@ def reproject_single_level(
             shape=(dim, dim),
             transform=dst_transform,
         )
+
     # create the data array for each level
 
     plevels[lkey] = xr.Dataset(attrs=ds.attrs)
@@ -133,7 +134,6 @@ def reproject_single_level(
             plevels[lkey][k] = reproject(da, k)
     level_ds = plevels[lkey]
     level_ds.attrs = attrs
-
 
     chunks = {'x': pixels_per_tile, 'y': pixels_per_tile}
 
@@ -156,20 +156,18 @@ def reproject_single_level(
     return level_ds
 
 
-
-
 # single_level branch
 def pyramid_reproject(
     ds: xr.Dataset,
     *,
-    projection:typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     levels: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
     resampling: str | dict = 'average',
     extra_dim: str = None,
+    clear_attrs: bool = False,
 ) -> dt.DataTree:
-
     """Create a multiscale pyramid of a dataset via reprojection.
 
     Parameters
@@ -190,6 +188,8 @@ def pyramid_reproject(
         If a dict, keys are variable names and values are warp resampling methods.
     extra_dim : str, optional
         The name of the extra dimension to iterate over. Default is None.
+    clear_attrs : bool, False
+        Clear the attributes of the DataArrays within the multiscale pyramid. Default is False.
 
     Returns
     -------
@@ -200,6 +200,9 @@ def pyramid_reproject(
 
     import rioxarray  # noqa: F401
     from rasterio.warp import Resampling
+
+    if not levels:
+        levels = get_levels(ds)
 
     # multiscales spec
     save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
@@ -215,7 +218,7 @@ def pyramid_reproject(
 
     # Convert resampling from string to dictionary if necessary
     if isinstance(resampling, str):
-        resampling_dict = defaultdict(lambda: resampling)
+        resampling_dict: dict = defaultdict(lambda: resampling)
     else:
         resampling_dict = resampling
 
@@ -231,16 +234,20 @@ def pyramid_reproject(
         dst_transform = projection_model.transform(dim=dim)
 
         def reproject(da, var):
-            return da.rio.reproject(
+            da.encoding['_FillValue'] = np.nan
+            da = da.rio.reproject(
                 projection_model._crs,
                 resampling=Resampling[resampling_dict[var]],
                 shape=(dim, dim),
                 transform=dst_transform,
             )
+            return da
 
         # create the data array for each level
         plevels[lkey] = xr.Dataset(attrs=ds.attrs)
         for k, da in ds.items():
+            if clear_attrs:
+                da.attrs.clear()
             if len(da.shape) == 4:
                 # if extra_dim is not specified, raise an error
                 if extra_dim is None:
@@ -260,6 +267,10 @@ def pyramid_reproject(
     pyramid = dt.DataTree.from_dict(plevels)
 
     pyramid = add_metadata_and_zarr_encoding(
-        pyramid, levels=levels, pixels_per_tile=pixels_per_tile, other_chunks=other_chunks, projection=projection_model
+        pyramid,
+        levels=levels,
+        pixels_per_tile=pixels_per_tile,
+        other_chunks=other_chunks,
+        projection=projection_model,
     )
     return pyramid

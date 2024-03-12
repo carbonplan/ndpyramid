@@ -82,6 +82,8 @@ exclude = [
     "node_modules",
     "venv",
 ]
+
+[tool.ruff.lint]
 per-file-ignores = {}
 # E402: module level import not at top of file
 # E501: line too long - let black worry about that
@@ -100,12 +102,16 @@ select = [
 ]
 
 
-[tool.ruff.mccabe]
+[tool.ruff.lint.mccabe]
 max-complexity = 18
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 known-first-party = ["ndpyramid"]
 
 [tool.pytest.ini_options]
 console_output_style = "count"
 addopts = "--cov=./ --cov-report=xml --verbose"
+
+[tool.mypy]
+ignore_missing_imports = true
+no_implicit_optional = false

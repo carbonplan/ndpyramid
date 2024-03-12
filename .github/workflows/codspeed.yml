@@ -1,0 +1,50 @@
+name: codspeed-benchmarks
+
+on:
+  # Run on pushes to the main branch
+  push:
+    branches:
+      - "main"
+  # Run on pull requests
+  pull_request:
+  # `workflow_dispatch` allows CodSpeed to trigger backtest
+  # performance analysis in order to generate initial data.
+  workflow_dispatch:
+
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash -el {0}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Miniconda
+        uses: conda-incubator/setup-miniconda@v3.0.3
+        with:
+          auto-activate-base: true
+          activate-environment: "" # base environment
+          channels: conda-forge,nodefaults
+          channel-priority: strict
+
+      - name: Install dependencies
+        run: |
+          # $CONDA is an environment variable pointing to the root of the miniconda directory
+          # Preprend $CONDA/bin to $PATH so that conda's python is used over system python
+          echo $CONDA/bin >> $GITHUB_PATH
+          conda install --solver=libmamba dask python=3.10 \
+                        esmpy>=8.2.0 mpich netcdf4 numpy pip pooch pydantic>=1.10 pyproj \
+                        pytest pytest-cov pytest-mypy rasterio rioxarray scipy sparse>=0.13.0 \
+                        xarray xarray-datatree>=0.0.11 xesmf zarr cf_xarray>=0.8.0
+          python -m pip install -U pytest-codspeed setuptools
+          python -m pip install -e . --no-deps
+
+      - name: Run benchmarks
+        uses: CodSpeedHQ/action@v2.2.1
+        with:
+          run: |
+            conda list
+            python -c "import ndpyramid; print(ndpyramid.__version__)"
+            python -m pytest --codspeed
