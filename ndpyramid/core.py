@@ -1,10 +1,10 @@
 from __future__ import annotations  # noqa: F401
 
-import contextlib
 import typing
 from collections import defaultdict
 
 import datatree as dt
+import numpy as np
 import xarray as xr
 
 from .common import Projection
@@ -132,16 +132,13 @@ def pyramid_reproject(
         dst_transform = projection_model.transform(dim=dim)
 
         def reproject(da, var):
+            da.encoding['_FillValue'] = np.nan
             da = da.rio.reproject(
                 projection_model._crs,
                 resampling=Resampling[resampling_dict[var]],
                 shape=(dim, dim),
                 transform=dst_transform,
             )
-            da = da.where(da != da.rio.nodata)
-            with contextlib.suppress(KeyError):
-                del da.attrs['_FillValue']
-                del da.encoding['_FillValue']
             return da
 
         # create the data array for each level

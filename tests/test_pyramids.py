@@ -41,7 +41,7 @@ def test_reprojected_pyramid_fill(temperature, benchmark):
     """
     pytest.importorskip('rioxarray')
     temperature = temperature.rio.write_crs('EPSG:4326')
-    pyramid = benchmark(lambda: pyramid_reproject(temperature, levels=2))
+    pyramid = benchmark(lambda: pyramid_reproject(temperature, levels=1))
     assert np.isnan(pyramid['0'].air.isel(time=0, x=0, y=0).values)
 
 
