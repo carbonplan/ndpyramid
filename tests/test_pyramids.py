@@ -28,12 +28,21 @@ def test_reprojected_pyramid(temperature, benchmark):
     pytest.importorskip('rioxarray')
     levels = 2
     temperature = temperature.rio.write_crs('EPSG:4326')
-    pyramid = benchmark(lambda: pyramid_reproject(temperature, levels=2))
+    pyramid = benchmark(lambda: pyramid_reproject(temperature, levels=levels))
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels
     assert pyramid.ds.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
-    assert np.isnan(pyramid['0'].air.isel(time=0, x=0, y=0).values)
     pyramid.to_zarr(MemoryStore())
+
+
+def test_reprojected_pyramid_fill(temperature, benchmark):
+    """
+    Test for https://github.com/carbonplan/ndpyramid/issues/93.
+    """
+    pytest.importorskip('rioxarray')
+    temperature = temperature.rio.write_crs('EPSG:4326')
+    pyramid = benchmark(lambda: pyramid_reproject(temperature, levels=2))
+    assert np.isnan(pyramid['0'].air.isel(time=0, x=0, y=0).values)
 
 
 @pytest.mark.parametrize('regridder_apply_kws', [None, {'keep_attrs': False}])
