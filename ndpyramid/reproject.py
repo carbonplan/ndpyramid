@@ -9,11 +9,17 @@ import xarray as xr
 from rasterio.warp import Resampling
 
 from .common import Projection
-from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
+from .utils import (
+    add_metadata_and_zarr_encoding,
+    get_levels,
+    get_version,
+    multiscales_template,
+)
 
 
 def _da_reproject(da, *, dim, crs, resampling, transform):
-    da.encoding['_FillValue'] = np.nan
+    if da.encoding.get('_FillValue') is None and np.issubdtype(da.dtype, np.floating):
+        da.encoding['_FillValue'] = np.nan
     return da.rio.reproject(
         crs,
         resampling=resampling,
