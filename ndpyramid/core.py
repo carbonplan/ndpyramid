@@ -8,7 +8,12 @@ import numpy as np
 import xarray as xr
 
 from .common import Projection
-from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
+from .utils import (
+    add_metadata_and_zarr_encoding,
+    get_levels,
+    get_version,
+    multiscales_template,
+)
 
 
 def pyramid_coarsen(
@@ -132,7 +137,10 @@ def pyramid_reproject(
         dst_transform = projection_model.transform(dim=dim)
 
         def reproject(da, var):
-            da.encoding['_FillValue'] = np.nan
+            # Set float FillValue that rasterio will use to initialize array
+            if da.encoding.get('_FillValue') is None and np.issubdtype(da.dtype, np.floating):
+                da.encoding['_FillValue'] = np.nan
+
             da = da.rio.reproject(
                 projection_model._crs,
                 resampling=Resampling[resampling_dict[var]],
