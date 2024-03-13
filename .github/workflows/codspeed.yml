@@ -7,12 +7,11 @@ on:
       - "main"
   # Run on pull requests
   pull_request:
-  # `workflow_dispatch` allows CodSpeed to trigger backtest
-  # performance analysis in order to generate initial data.
-  workflow_dispatch:
+    types: [labeled]
 
 jobs:
   benchmarks:
+    if: ${{ github.event.label.name == 'benchmark' }}
     runs-on: ubuntu-latest
     defaults:
       run:

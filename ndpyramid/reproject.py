@@ -4,6 +4,7 @@ import typing
 from collections import defaultdict
 
 import datatree as dt
+import numpy as np
 import xarray as xr
 from rasterio.warp import Resampling
 
@@ -12,6 +13,7 @@ from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, mult
 
 
 def _da_reproject(da, *, dim, crs, resampling, transform):
+    da.encoding['_FillValue'] = np.nan
     return da.rio.reproject(
         crs,
         resampling=resampling,
