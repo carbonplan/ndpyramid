@@ -1,6 +1,5 @@
 from __future__ import annotations  # noqa: F401
 
-import typing
 from collections import defaultdict
 
 import datatree as dt
@@ -8,7 +7,7 @@ import numpy as np
 import xarray as xr
 from rasterio.warp import Resampling
 
-from .common import Projection
+from .common import Projection, ProjectionOptions
 from .utils import (
     add_metadata_and_zarr_encoding,
     get_levels,
@@ -31,7 +30,7 @@ def _da_reproject(da, *, dim, crs, resampling, transform):
 def level_reproject(
     ds: xr.Dataset,
     *,
-    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    projection: ProjectionOptions = 'web-mercator',
     level: int,
     pixels_per_tile: int = 128,
     resampling: str | dict = 'average',
@@ -121,7 +120,7 @@ def level_reproject(
 def pyramid_reproject(
     ds: xr.Dataset,
     *,
-    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    projection: ProjectionOptions = 'web-mercator',
     levels: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,

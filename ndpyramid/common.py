@@ -1,12 +1,15 @@
 import typing
+from typing import TypeAlias
 
 import pydantic
 import pyproj
 import rasterio.transform
 
+ProjectionOptions: TypeAlias = typing.Literal['web-mercator', 'equidistant-cylindrical']
+
 
 class Projection(pydantic.BaseModel):
-    name: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator'
+    name: ProjectionOptions = 'web-mercator'
     _crs: str = pydantic.PrivateAttr()
     _proj = pydantic.PrivateAttr()
 
