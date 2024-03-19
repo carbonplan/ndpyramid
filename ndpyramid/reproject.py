@@ -1,7 +1,9 @@
 from __future__ import annotations  # noqa: F401
 
 from collections import defaultdict
+from typing import Any
 
+import dask
 import datatree as dt
 import numpy as np
 import xarray as xr
@@ -27,6 +29,40 @@ def _da_reproject(da, *, dim, crs, resampling, transform):
     )
 
 
+def _add_x_y_coords(da: xr.DataArray, shape: tuple[Any, Any, Any], transform) -> xr.DataArray:
+    '''helper function to add x/y coordinates to xr.DataArray'''
+
+    bounds_shape = tuple(s + 1 for s in shape)
+
+    xs = np.empty(shape)
+    ys = np.empty(shape)
+    for i in range(bounds_shape[0]):
+        for j in range(bounds_shape[1]):
+            if i < shape[0] and j < shape[1]:
+                x, y = transform * [j + 0.5, i + 0.5]
+                xs[i, j] = x
+                ys[i, j] = y
+
+    da = da.assign_coords(
+        {'x': xr.DataArray(xs[0, :], dims=['x']), 'y': xr.DataArray(ys[:, 0], dims=['y'])}
+    )
+
+    return da
+
+
+def _make_template(
+    shape: tuple[Any, Any, Any], chunks: tuple[Any, Any, Any], dst_transform, attrs: dict
+) -> xr.DataArray:
+    '''helper function to make a xr.DataArray template'''
+
+    template = xr.DataArray(
+        data=dask.array.empty(shape, chunks=chunks), dims=('y', 'x'), attrs=attrs
+    )
+    template = _add_x_y_coords(template, shape, dst_transform)
+    template.coords['spatial_ref'] = xr.DataArray(np.array(1.0))
+    return template
+
+
 def level_reproject(
     ds: xr.Dataset,
     *,
@@ -35,6 +71,7 @@ def level_reproject(
     pixels_per_tile: int = 128,
     resampling: str | dict = 'average',
     extra_dim: str = None,
+    spatial_dims: str = None,
     clear_attrs: bool = False,
 ) -> xr.Dataset:
     """Create a level of a multiscale pyramid of a dataset via reprojection.
@@ -53,6 +90,10 @@ def level_reproject(
         Rasterio warp resampling method to use. Keys are variable names and values are warp resampling methods.
     extra_dim : str, optional
         The name of the extra dimension to iterate over. Default is None.
+    clear_attrs : bool, False
+        Clear the attributes of the DataArrays within the multiscale pyramid. Default is False.
+    spatial_dims : List, optional
+        List of the spatial dims in order to use map_blocks. Default is None.
 
     Returns
     -------
@@ -106,13 +147,33 @@ def level_reproject(
             ds_level[k] = xr.concat(da_all, ds[extra_dim])
         else:
             # if the data array is not 4D, just reproject it
-            ds_level[k] = _da_reproject(
-                da,
-                dim=dim,
-                crs=projection_model._crs,
-                resampling=Resampling[resampling_dict[k]],
-                transform=dst_transform,
-            )
+            if spatial_dims is None:
+                ds_level[k] = _da_reproject(
+                    da,
+                    dim=dim,
+                    crs=projection_model._crs,
+                    resampling=Resampling[resampling_dict[k]],
+                    transform=dst_transform,
+                )
+            else:
+                other_dim_size = {k: v for k, v in da.sizes.items() if k not in spatial_dims}
+                shape = (dim, dim, list(other_dim_size.values())[0])
+                chunks = (pixels_per_tile, pixels_per_tile, list(other_dim_size.values())[0])
+                # if the data array is not 4D, just reproject it
+                template = _make_template(
+                    shape=shape, chunks=chunks, dst_transform=dst_transform, attrs=ds[k].attrs
+                )
+                ds_level[k] = xr.map_blocks(
+                    _da_reproject,
+                    da,
+                    kwargs=dict(
+                        dim=dim,
+                        crs=projection_model._crs,
+                        resampling=Resampling[resampling_dict[k]],
+                        transform=dst_transform,
+                    ),
+                    template=template,
+                )
     ds_level.attrs['multiscales'] = attrs['multiscales']
     return ds_level
 
