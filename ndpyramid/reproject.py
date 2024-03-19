@@ -29,7 +29,7 @@ def _da_reproject(da, *, dim, crs, resampling, transform):
     )
 
 
-def _add_x_y_coords(da: xr.DataArray, shape: tuple[Any, Any, Any], transform) -> xr.DataArray:
+def _add_x_y_coords(da: xr.DataArray, shape: tuple[Any, Any], transform) -> xr.DataArray:
     '''helper function to add x/y coordinates to xr.DataArray'''
 
     bounds_shape = tuple(s + 1 for s in shape)
@@ -51,7 +51,7 @@ def _add_x_y_coords(da: xr.DataArray, shape: tuple[Any, Any, Any], transform) ->
 
 
 def _make_template(
-    shape: tuple[Any, Any, Any], chunks: tuple[Any, Any, Any], dst_transform, attrs: dict
+    shape: tuple[Any, Any], chunks: tuple[Any, Any], dst_transform, attrs: dict
 ) -> xr.DataArray:
     '''helper function to make a xr.DataArray template'''
 
@@ -156,9 +156,8 @@ def level_reproject(
                     transform=dst_transform,
                 )
             else:
-                other_dim_size = {k: v for k, v in da.sizes.items() if k not in spatial_dims}
-                shape = (dim, dim, list(other_dim_size.values())[0])
-                chunks = (pixels_per_tile, pixels_per_tile, list(other_dim_size.values())[0])
+                shape = (dim, dim)
+                chunks = (pixels_per_tile, pixels_per_tile)
                 # if the data array is not 4D, just reproject it
                 template = _make_template(
                     shape=shape, chunks=chunks, dst_transform=dst_transform, attrs=ds[k].attrs
@@ -187,6 +186,7 @@ def pyramid_reproject(
     other_chunks: dict = None,
     resampling: str | dict = 'average',
     extra_dim: str = None,
+    spatial_dims: str = None,
     clear_attrs: bool = False,
 ) -> dt.DataTree:
     """Create a multiscale pyramid of a dataset via reprojection.
@@ -209,6 +209,8 @@ def pyramid_reproject(
         If a dict, keys are variable names and values are warp resampling methods.
     extra_dim : str, optional
         The name of the extra dimension to iterate over. Default is None.
+    spatial_dims : List, optional
+        List of the spatial dims in order to use map_blocks. Default is None.
     clear_attrs : bool, False
         Clear the attributes of the DataArrays within the multiscale pyramid. Default is False.
 
@@ -243,6 +245,7 @@ def pyramid_reproject(
             pixels_per_tile=pixels_per_tile,
             resampling=resampling,
             extra_dim=extra_dim,
+            spatial_dims=spatial_dims,
             clear_attrs=clear_attrs,
         )
 
