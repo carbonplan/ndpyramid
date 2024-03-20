@@ -53,6 +53,8 @@ def level_reproject(
         Rasterio warp resampling method to use. Keys are variable names and values are warp resampling methods.
     extra_dim : str, optional
         The name of the extra dimension to iterate over. Default is None.
+    clear_attrs : bool, False
+        Clear the attributes of the DataArrays within the multiscale level. Default is False.
 
     Returns
     -------
