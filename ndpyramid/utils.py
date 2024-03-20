@@ -66,7 +66,11 @@ def set_zarr_encoding(
     float_dtype: npt.DTypeLike | None = None,
     int_dtype: npt.DTypeLike | None = None,
 ) -> xr.Dataset:
-    """Set zarr encoding for each variable in the dataset
+    """
+    Set zarr encoding for each variable in the dataset to be compatible with carbonplan-maps.
+
+    Sets compressor, _FillValue, and possibly casts the dtype.
+    Leaves other encoding fields (such as chunks) unaltered.
 
     Parameters
     ----------
@@ -77,6 +81,8 @@ def set_zarr_encoding(
         The default is {'id': 'zlib', 'level': 1}
     float_dtype : str or dtype, optional
         Dtype to cast floating point variables to
+    int_dtype : str or dtype, optional
+        Dtype to cast integer variables to
 
     Returns
     -------
@@ -93,15 +99,15 @@ def set_zarr_encoding(
 
     time_vars = ds.cf.axes.get('T', []) + ds.cf.bounds.get('T', [])
     for varname, da in ds.variables.items():
-        # maybe cast float type
+
+        # maybe cast dtypes
+        # TODO shouldn't this default to 32-bit integers?
         if np.issubdtype(da.dtype, np.floating) and float_dtype is not None:
             da = da.astype(float_dtype)
-
-        if np.issubdtype(da.dtype, np.integer) and int_dtype is not None:
+            da.encoding['dtype'] = str(float_dtype)
+        elif np.issubdtype(da.dtype, np.integer) and int_dtype is not None:
             da = da.astype(int_dtype)
-
-        # remove old encoding
-        da.encoding.clear()
+            da.encoding['dtype'] = str(int_dtype)
 
         # update with new encoding
         da.encoding['compressor'] = compressor
@@ -113,6 +119,7 @@ def set_zarr_encoding(
         # set encoding for time and time_bnds
         if varname in time_vars:
             da.encoding['dtype'] = 'int32'
+
         ds[varname] = da
 
     return ds
