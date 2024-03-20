@@ -54,7 +54,7 @@ def level_reproject(
     extra_dim : str, optional
         The name of the extra dimension to iterate over. Default is None.
     clear_attrs : bool, False
-        Clear the attributes of the DataArrays within the multiscale pyramid. Default is False.
+        Clear the attributes of the DataArrays within the multiscale level. Default is False.
 
     Returns
     -------
