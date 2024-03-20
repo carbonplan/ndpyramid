@@ -82,7 +82,7 @@ def set_zarr_encoding(
     int_dtype : str or dtype, optional
         Dtype to cast integer variables to
     datetime_dtype : str or dtype, optional
-        Dtype to cast numpy.datetime64 variables to.
+        Dtype to encode numpy.datetime64 variables as.
         Time coordinates are encoded as 'int32' if
         `datetime_dtype` is None and cf_xarray is able to
         identify the coordinates as representing time.
@@ -119,12 +119,11 @@ def set_zarr_encoding(
         elif np.issubdtype(da.dtype, np.integer) and int_dtype is not None:
             da = da.astype(int_dtype)
             da.encoding['dtype'] = str(int_dtype)
-        elif np.issubdtype(da.dtype, np.datetime64) and datetime_dtype is not None:
-            da = da.astype(datetime_dtype)
-            da.encoding['dtype'] = str(datetime_dtype)
         elif da.dtype == 'O' and object_dtype is not None:
             da = da.astype(object_dtype)
             da.encoding['dtype'] = str(object_dtype)
+        elif np.issubdtype(da.dtype, np.datetime64) and datetime_dtype is not None:
+            da.encoding['dtype'] = str(datetime_dtype)
         elif varname in time_vars:
             da.encoding['dtype'] = 'int32'
 
