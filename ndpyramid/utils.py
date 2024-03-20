@@ -65,6 +65,8 @@ def set_zarr_encoding(
     codec_config: dict | None = None,
     float_dtype: npt.DTypeLike | None = None,
     int_dtype: npt.DTypeLike | None = None,
+    datetime_dtype: npt.DTypeLike | None = None,
+    object_dtype: npt.DTypeLike | None = None,
 ) -> xr.Dataset:
     """Set zarr encoding for each variable in the dataset
 
@@ -77,11 +79,25 @@ def set_zarr_encoding(
         The default is {'id': 'zlib', 'level': 1}
     float_dtype : str or dtype, optional
         Dtype to cast floating point variables to
+    int_dtype : str or dtype, optional
+        Dtype to cast integer variables to
+    datetime_dtype : str or dtype, optional
+        Dtype to cast numpy.datetime64 variables to.
+        Time coordinates are encoded as 'int32' if
+        `datetime_dtype` is None and cf_xarray is able to
+        identify the coordinates as representing time.
+    object_dtype : str or dtype, optional
+        Dtype to cast object variables to.
 
     Returns
     -------
     ds : xr.Dataset
         Output dataset with updated variable encodings
+
+    Notes
+    -----
+    The *_dtype parameters can be used to coerce variables into data types
+    readable by Zarr implementations in other languages.
     """
     import numcodecs
 
@@ -93,15 +109,24 @@ def set_zarr_encoding(
 
     time_vars = ds.cf.axes.get('T', []) + ds.cf.bounds.get('T', [])
     for varname, da in ds.variables.items():
-        # maybe cast float type
-        if np.issubdtype(da.dtype, np.floating) and float_dtype is not None:
-            da = da.astype(float_dtype)
-
-        if np.issubdtype(da.dtype, np.integer) and int_dtype is not None:
-            da = da.astype(int_dtype)
-
         # remove old encoding
         da.encoding.clear()
+
+        # maybe cast data type
+        if np.issubdtype(da.dtype, np.floating) and float_dtype is not None:
+            da = da.astype(float_dtype)
+            da.encoding['dtype'] = str(float_dtype)
+        elif np.issubdtype(da.dtype, np.integer) and int_dtype is not None:
+            da = da.astype(int_dtype)
+            da.encoding['dtype'] = str(int_dtype)
+        elif np.issubdtype(da.dtype, np.datetime64) and datetime_dtype is not None:
+            da = da.astype(datetime_dtype)
+            da.encoding['dtype'] = str(datetime_dtype)
+        elif da.dtype == 'O' and object_dtype is not None:
+            da = da.astype(object_dtype)
+            da.encoding['dtype'] = str(object_dtype)
+        elif varname in time_vars:
+            da.encoding['dtype'] = 'int32'
 
         # update with new encoding
         da.encoding['compressor'] = compressor
@@ -109,10 +134,6 @@ def set_zarr_encoding(
             del da.attrs['_FillValue']
         da.encoding['_FillValue'] = default_fillvals.get(da.dtype.str[-2:], None)
 
-        # TODO: handle date/time types
-        # set encoding for time and time_bnds
-        if varname in time_vars:
-            da.encoding['dtype'] = 'int32'
         ds[varname] = da
 
     return ds
@@ -145,6 +166,13 @@ def add_metadata_and_zarr_encoding(
     -------
     dt.DataTree
         Updated data pyramid with metadata / encoding set
+
+    Notes
+    -----
+    The variables within the pyramid are coerced into data types readable by
+    `@carbonplan/maps`. See https://ndpyramid.readthedocs.io/en/latest/schema.html
+    for more information. Raise an issue in https://github.com/carbonplan/ndpyramid
+    if more flexibility is needed.
     '''
     chunks = {'x': pixels_per_tile, 'y': pixels_per_tile}
     if other_chunks is not None:
@@ -160,7 +188,12 @@ def add_metadata_and_zarr_encoding(
 
         # set dataset encoding
         pyramid[slevel].ds = set_zarr_encoding(
-            pyramid[slevel].ds, codec_config={'id': 'zlib', 'level': 1}, float_dtype='float32'
+            pyramid[slevel].ds,
+            codec_config={'id': 'zlib', 'level': 1},
+            float_dtype='float32',
+            int_dtype='int32',
+            datetime_dtype='int32',
+            object_dtype='str',
         )
 
     # set global metadata
