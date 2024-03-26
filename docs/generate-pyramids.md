@@ -23,3 +23,25 @@ pyramid = pyramid_reproject(ds, levels=2)
 # write the pyramid to zarr
 pyramid.to_zarr('./path/to/write')
 ```
+
+There's also `pyramid_create`--a more versatile alternative to pyramid_coarsen.
+
+This function accepts a custom function with the signature: `ds`, `factor`, `dims`.
+
+Here, the `sel_coarsen` function uses `ds.sel` to perform coarsening:
+
+```python
+def sel_coarsen(ds, factor, dims, **kwargs):
+    return ds.sel(**{dim: slice(None, None, factor) for dim in dims})
+
+factors = [4, 2, 1]
+pyramid = pyramid_create(
+    temperature,
+    dims=('lat', 'lon'),
+    factors=factors,
+    boundary='trim',
+    func=sel_coarsen,
+    method_label=method_label,
+    type_label='pick',
+)
+```

@@ -3,7 +3,7 @@ import pytest
 import xarray as xr
 from zarr.storage import MemoryStore
 
-from ndpyramid import pyramid_coarsen, pyramid_regrid, pyramid_reproject
+from ndpyramid import pyramid_coarsen, pyramid_create, pyramid_regrid, pyramid_reproject
 from ndpyramid.regrid import generate_weights_pyramid, make_grid_ds
 
 
@@ -21,6 +21,32 @@ def test_xarray_coarsened_pyramid(temperature, benchmark):
     )
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == len(factors)
+    assert pyramid.ds.attrs['multiscales'][0]['method'] == 'pyramid_coarsen'
+    assert pyramid.ds.attrs['multiscales'][0]['type'] == 'reduce'
+    pyramid.to_zarr(MemoryStore())
+
+
+@pytest.mark.parametrize("method_label", [None, "sel_coarsen"])
+def test_xarray_custom_coarsened_pyramid(temperature, benchmark, method_label):
+    def sel_coarsen(ds, factor, dims, **kwargs):
+        return ds.sel(**{dim: slice(None, None, factor) for dim in dims})
+
+    factors = [4, 2, 1]
+    pyramid = benchmark(
+        lambda: pyramid_create(
+            temperature,
+            dims=('lat', 'lon'),
+            factors=factors,
+            boundary='trim',
+            func=sel_coarsen,
+            method_label=method_label,
+            type_label='pick',
+        )
+    )
+    assert pyramid.ds.attrs['multiscales']
+    assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == len(factors)
+    assert pyramid.ds.attrs['multiscales'][0]['method'] == 'sel_coarsen' 
+    assert pyramid.ds.attrs['multiscales'][0]['type'] == 'pick'
     pyramid.to_zarr(MemoryStore())
 
 
