@@ -26,7 +26,7 @@ def test_xarray_coarsened_pyramid(temperature, benchmark):
     pyramid.to_zarr(MemoryStore())
 
 
-@pytest.mark.parametrize("method_label", [None, "sel_coarsen"])
+@pytest.mark.parametrize('method_label', [None, 'sel_coarsen'])
 def test_xarray_custom_coarsened_pyramid(temperature, benchmark, method_label):
     def sel_coarsen(ds, factor, dims, **kwargs):
         return ds.sel(**{dim: slice(None, None, factor) for dim in dims})
@@ -45,7 +45,7 @@ def test_xarray_custom_coarsened_pyramid(temperature, benchmark, method_label):
     )
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == len(factors)
-    assert pyramid.ds.attrs['multiscales'][0]['method'] == 'sel_coarsen' 
+    assert pyramid.ds.attrs['multiscales'][0]['method'] == 'sel_coarsen'
     assert pyramid.ds.attrs['multiscales'][0]['type'] == 'pick'
     pyramid.to_zarr(MemoryStore())
 
