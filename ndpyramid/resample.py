@@ -16,7 +16,7 @@ from .utils import (
 )
 
 
-def _da_reproject(da, *, dim, crs, resampling, transform):
+def _da_resample(da, *, dim, crs, resampling, transform):
     if da.encoding.get('_FillValue') is None and np.issubdtype(da.dtype, np.floating):
         da.encoding['_FillValue'] = np.nan
     return da.rio.reproject(
@@ -27,7 +27,7 @@ def _da_reproject(da, *, dim, crs, resampling, transform):
     )
 
 
-def level_reproject(
+def level_resample(
     ds: xr.Dataset,
     *,
     projection: ProjectionOptions = 'web-mercator',
@@ -37,7 +37,7 @@ def level_reproject(
     extra_dim: str = None,
     clear_attrs: bool = False,
 ) -> xr.Dataset:
-    """Create a level of a multiscale pyramid of a dataset via reprojection.
+    """Create a level of a multiscale pyramid of a dataset via resampling.
 
     Parameters
     ----------
@@ -70,7 +70,7 @@ def level_reproject(
         'multiscales': multiscales_template(
             datasets=[{'path': '.', 'level': level}],
             type='reduce',
-            method='pyramid_reproject',
+            method='pyramid_resample',
             version=get_version(),
             kwargs=save_kwargs,
         )
@@ -96,19 +96,19 @@ def level_reproject(
                 raise ValueError("must specify 'extra_dim' to iterate over 4d data")
             da_all = []
             for index in ds[extra_dim]:
-                # reproject each index of the 4th dimension
-                da_reprojected = _da_reproject(
+                # resample each index of the 4th dimension
+                da_resampled = _da_resample(
                     da.sel({extra_dim: index}),
                     dim=dim,
                     crs=projection_model._crs,
                     resampling=Resampling[resampling_dict[k]],
                     transform=dst_transform,
                 )
-                da_all.append(da_reprojected)
+                da_all.append(da_resampled)
             ds_level[k] = xr.concat(da_all, ds[extra_dim])
         else:
-            # if the data array is not 4D, just reproject it
-            ds_level[k] = _da_reproject(
+            # if the data array is not 4D, just resample it
+            ds_level[k] = _da_resample(
                 da,
                 dim=dim,
                 crs=projection_model._crs,
@@ -119,7 +119,7 @@ def level_reproject(
     return ds_level
 
 
-def pyramid_reproject(
+def pyramid_resample(
     ds: xr.Dataset,
     *,
     projection: ProjectionOptions = 'web-mercator',
@@ -130,7 +130,7 @@ def pyramid_reproject(
     extra_dim: str = None,
     clear_attrs: bool = False,
 ) -> dt.DataTree:
-    """Create a multiscale pyramid of a dataset via reprojection.
+    """Create a multiscale pyramid of a dataset via resampling.
 
     Parameters
     ----------
@@ -166,7 +166,7 @@ def pyramid_reproject(
         'multiscales': multiscales_template(
             datasets=[{'path': str(i)} for i in range(levels)],
             type='reduce',
-            method='pyramid_reproject',
+            method='pyramid_resample',
             version=get_version(),
             kwargs=save_kwargs,
         )
@@ -177,7 +177,7 @@ def pyramid_reproject(
 
     # pyramid data
     for level in range(levels):
-        plevels[str(level)] = level_reproject(
+        plevels[str(level)] = level_resample(
             ds,
             projection=projection,
             level=level,
