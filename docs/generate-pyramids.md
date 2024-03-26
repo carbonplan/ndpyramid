@@ -24,7 +24,7 @@ pyramid = pyramid_reproject(ds, levels=2)
 pyramid.to_zarr('./path/to/write')
 ```
 
-There's also `pyramid_create`--a more versatile alternative to pyramid_coarsen.
+There's also `pyramid_create`--a more versatile alternative to `pyramid_coarsen`.
 
 This function accepts a custom function with the signature: `ds`, `factor`, `dims`.
 
