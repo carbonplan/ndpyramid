@@ -31,7 +31,8 @@ def test_reprojected_pyramid(temperature, benchmark):
     pyramid = benchmark(lambda: pyramid_reproject(temperature, levels=levels))
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels
-    assert pyramid.ds.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
+    assert pyramid.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
+    assert pyramid['0'].attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
     pyramid.to_zarr(MemoryStore())
 
 
@@ -54,6 +55,8 @@ def test_regridded_pyramid(temperature, regridder_apply_kws, benchmark):
         )
     )
     assert pyramid.ds.attrs['multiscales']
+    assert pyramid.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
+    assert pyramid['0'].attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
     expected_attrs = (
         temperature['air'].attrs
         if not regridder_apply_kws or regridder_apply_kws.get('keep_attrs')
