@@ -5,6 +5,7 @@ from zarr.storage import MemoryStore
 
 from ndpyramid import pyramid_coarsen, pyramid_regrid, pyramid_reproject
 from ndpyramid.regrid import generate_weights_pyramid, make_grid_ds
+from ndpyramid.testing import verify_bounds
 
 
 @pytest.fixture
@@ -29,6 +30,7 @@ def test_reprojected_pyramid(temperature, benchmark):
     levels = 2
     temperature = temperature.rio.write_crs('EPSG:4326')
     pyramid = benchmark(lambda: pyramid_reproject(temperature, levels=levels))
+    verify_bounds(pyramid)
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels
     assert pyramid.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
@@ -54,6 +56,7 @@ def test_regridded_pyramid(temperature, regridder_apply_kws, benchmark):
             temperature, levels=2, regridder_apply_kws=regridder_apply_kws, other_chunks={'time': 2}
         )
     )
+    verify_bounds(pyramid)
     assert pyramid.ds.attrs['multiscales']
     assert pyramid.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
     assert pyramid['0'].attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
@@ -76,6 +79,7 @@ def test_regridded_pyramid_with_weights(temperature, benchmark):
             temperature, levels=levels, weights_pyramid=weights_pyramid, other_chunks={'time': 2}
         )
     )
+    verify_bounds(pyramid)
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels
     pyramid.to_zarr(MemoryStore())
