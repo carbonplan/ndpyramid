@@ -45,6 +45,9 @@ def pyramid_create(
     # multiscales spec
     save_kwargs = locals()
     del save_kwargs['ds']
+    del save_kwargs['func']
+    del save_kwargs['type_label']
+    del save_kwargs['method_label']
 
     attrs = {
         'multiscales': multiscales_template(

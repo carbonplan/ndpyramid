@@ -21,7 +21,7 @@ def test_xarray_coarsened_pyramid(temperature, benchmark):
     )
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == len(factors)
-    assert pyramid.ds.attrs['multiscales'][0]['method'] == 'pyramid_coarsen'
+    assert pyramid.ds.attrs['multiscales'][0]['metadata']['method'] == 'pyramid_coarsen'
     assert pyramid.ds.attrs['multiscales'][0]['type'] == 'reduce'
     pyramid.to_zarr(MemoryStore())
 
@@ -45,7 +45,7 @@ def test_xarray_custom_coarsened_pyramid(temperature, benchmark, method_label):
     )
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == len(factors)
-    assert pyramid.ds.attrs['multiscales'][0]['method'] == 'sel_coarsen'
+    assert pyramid.ds.attrs['multiscales'][0]['metadata']['method'] == 'sel_coarsen'
     assert pyramid.ds.attrs['multiscales'][0]['type'] == 'pick'
     pyramid.to_zarr(MemoryStore())
 

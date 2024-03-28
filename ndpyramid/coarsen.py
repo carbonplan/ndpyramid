@@ -23,7 +23,7 @@ def pyramid_coarsen(
         Additional keyword arguments to pass to xarray.Dataset.coarsen.
     """
 
-    def coarsen(ds: xr.Dataset, factor: int, **kwargs):
+    def coarsen(ds: xr.Dataset, factor: int, dims: list[str], **kwargs):
         # merge dictionary via union operator
         kwargs |= {d: factor for d in dims}
         return ds.coarsen(**kwargs).mean()  # type: ignore
