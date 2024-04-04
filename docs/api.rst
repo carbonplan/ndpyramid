@@ -11,5 +11,6 @@ Top level API
    :toctree: generated/
 
    pyramid_coarsen
+   pyramid_create
    pyramid_reproject
    pyramid_regrid
