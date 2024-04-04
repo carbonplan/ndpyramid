@@ -35,12 +35,17 @@ dependencies = [
 
 [project.optional-dependencies]
 test = [
+    "dask",
+    "mercantile",
+    "pooch",
     "pre-commit",
     "pytest-benchmark",
     "pytest-codspeed",
     "pytest-cov",
     "pytest-mypy",
     "pytest",
+    "rioxarray",
+    "scipy",
 ]
 
 

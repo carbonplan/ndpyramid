@@ -5,6 +5,7 @@ channels:
 dependencies:
   - dask
   - esmpy>=8.2.0
+  - mercantile
   - mpich
   - netcdf4
   - numpy
