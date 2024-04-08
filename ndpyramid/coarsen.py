@@ -3,7 +3,7 @@ from __future__ import annotations  # noqa: F401
 import datatree as dt
 import xarray as xr
 
-from .utils import get_version, multiscales_template
+from .create import pyramid_create
 
 
 def pyramid_coarsen(
@@ -23,28 +23,17 @@ def pyramid_coarsen(
         Additional keyword arguments to pass to xarray.Dataset.coarsen.
     """
 
-    # multiscales spec
-    save_kwargs = locals()
-    del save_kwargs['ds']
-
-    attrs = {
-        'multiscales': multiscales_template(
-            datasets=[{'path': str(i)} for i in range(len(factors))],
-            type='reduce',
-            method='pyramid_coarsen',
-            version=get_version(),
-            kwargs=save_kwargs,
-        )
-    }
-
-    # set up pyramid
-    plevels = {}
-
-    # pyramid data
-    for key, factor in enumerate(factors):
+    def coarsen(ds: xr.Dataset, factor: int, dims: list[str], **kwargs):
         # merge dictionary via union operator
         kwargs |= {d: factor for d in dims}
-        plevels[str(key)] = ds.coarsen(**kwargs).mean()  # type: ignore
+        return ds.coarsen(**kwargs).mean()  # type: ignore
 
-    plevels['/'] = xr.Dataset(attrs=attrs)
-    return dt.DataTree.from_dict(plevels)
+    return pyramid_create(
+        ds,
+        factors=factors,
+        dims=dims,
+        func=coarsen,
+        method_label='pyramid_coarsen',
+        type_label='reduce',
+        **kwargs,
+    )
