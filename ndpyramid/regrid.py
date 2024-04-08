@@ -246,7 +246,6 @@ def level_regrid(
         )
     }
 
-    # import pdb; pdb.set_trace()
     level_ds.attrs['multiscales'] = level_attrs['multiscales']
     return level_ds
 
