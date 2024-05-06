@@ -65,19 +65,27 @@ def level_reproject(
     -------
     Pyramid generation by level is experimental and subject to change.
     """
-    save_kwargs = {'pixels_per_tile': pixels_per_tile}
+    projection_model = Projection(name=projection)
+    dim = 2**level * pixels_per_tile
+    dst_transform = projection_model.transform(dim=dim)
+    save_kwargs = {
+        'level': level,
+        'pixels_per_tile': pixels_per_tile,
+        'projection': projection,
+        'resampling': resampling,
+        'extra_dim': extra_dim,
+        'clear_attrs': clear_attrs,
+    }
+
     attrs = {
         'multiscales': multiscales_template(
-            datasets=[{'path': '.', 'level': level}],
+            datasets=[{'path': '.', 'level': level, 'crs': projection_model._crs}],
             type='reduce',
             method='pyramid_reproject',
             version=get_version(),
             kwargs=save_kwargs,
         )
     }
-    dim = 2**level * pixels_per_tile
-    projection_model = Projection(name=projection)
-    dst_transform = projection_model.transform(dim=dim)
 
     # Convert resampling from string to dictionary if necessary
     if isinstance(resampling, str):
@@ -161,10 +169,21 @@ def pyramid_reproject(
     """
     if not levels:
         levels = get_levels(ds)
-    save_kwargs = {'levels': levels, 'pixels_per_tile': pixels_per_tile}
+    projection_model = Projection(name=projection)
+    save_kwargs = {
+        'levels': levels,
+        'pixels_per_tile': pixels_per_tile,
+        'projection': projection,
+        'other_chunks': other_chunks,
+        'resampling': resampling,
+        'extra_dim': extra_dim,
+        'clear_attrs': clear_attrs,
+    }
     attrs = {
         'multiscales': multiscales_template(
-            datasets=[{'path': str(i)} for i in range(levels)],
+            datasets=[
+                {'path': str(i), 'level': i, 'crs': projection_model._crs} for i in range(levels)
+            ],
             type='reduce',
             method='pyramid_reproject',
             version=get_version(),
@@ -190,8 +209,6 @@ def pyramid_reproject(
     # create the final multiscale pyramid
     plevels['/'] = xr.Dataset(attrs=attrs)
     pyramid = dt.DataTree.from_dict(plevels)
-
-    projection_model = Projection(name=projection)
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid,

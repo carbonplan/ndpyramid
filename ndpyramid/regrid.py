@@ -243,21 +243,30 @@ def pyramid_regrid(
     regridder_kws = {'periodic': True, **regridder_kws}
 
     # multiscales spec
-    save_kwargs = locals()
-    del save_kwargs['ds']
-    del save_kwargs['target_pyramid']
-    del save_kwargs['xe']
-    del save_kwargs['weights_pyramid']
+    projection_model = Projection(name=projection)
+    save_kwargs = {
+        'levels': levels,
+        'pixels_per_tile': pixels_per_tile,
+        'projection': projection,
+        'other_chunks': other_chunks,
+        'method': method,
+        'regridder_kws': regridder_kws,
+        'regridder_apply_kws': regridder_apply_kws,
+    }
 
     attrs = {
         'multiscales': multiscales_template(
-            datasets=[{'path': str(i)} for i in range(levels)],
+            datasets=[
+                {'path': str(i), 'level': i, 'crs': projection_model._crs} for i in range(levels)
+            ],
             type='reduce',
             method='pyramid_regrid',
             version=get_version(),
             kwargs=save_kwargs,
         )
     }
+    save_kwargs.pop('levels')
+    save_kwargs.pop('other_chunks')
 
     # set up pyramid
 
@@ -284,6 +293,16 @@ def pyramid_regrid(
             regridder_apply_kws = {}
         regridder_apply_kws = {**{'keep_attrs': True}, **regridder_apply_kws}
         plevels[str(level)] = regridder(ds, **regridder_apply_kws)
+        level_attrs = {
+            'multiscales': multiscales_template(
+                datasets=[{'path': '.', 'level': level, 'crs': projection_model._crs}],
+                type='reduce',
+                method='pyramid_regrid',
+                version=get_version(),
+                kwargs=save_kwargs,
+            )
+        }
+        plevels[str(level)].attrs['multiscales'] = level_attrs['multiscales']
 
     root = xr.Dataset(attrs=attrs)
     plevels['/'] = root
