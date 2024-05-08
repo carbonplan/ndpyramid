@@ -4,6 +4,7 @@ channels:
   - nodefaults
 dependencies:
   - dask
+  - jinja2
   - esmpy>=8.2.0
   - mercantile
   - mpich
@@ -14,6 +15,7 @@ dependencies:
   - pre-commit
   - pydantic>=1.10
   - pyproj
+  - pyresample
   - pytest
   - pytest-cov
   - pytest-mypy

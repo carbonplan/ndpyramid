@@ -1,11 +1,8 @@
 from __future__ import annotations  # noqa: F401
 
-from collections import defaultdict
-
 import datatree as dt
 import numpy as np
 import xarray as xr
-from rasterio.warp import Resampling
 
 from .common import Projection, ProjectionOptions
 from .utils import (
@@ -16,15 +13,10 @@ from .utils import (
 )
 
 
-def _da_resample(da, *, dim, crs, resampling, transform):
+def _da_resample(da, *, dim, projection_model):
     if da.encoding.get('_FillValue') is None and np.issubdtype(da.dtype, np.floating):
         da.encoding['_FillValue'] = np.nan
-    return da.rio.reproject(
-        crs,
-        resampling=resampling,
-        shape=(dim, dim),
-        transform=transform,
-    )
+    return da
 
 
 def level_resample(
@@ -33,8 +25,6 @@ def level_resample(
     projection: ProjectionOptions = 'web-mercator',
     level: int,
     pixels_per_tile: int = 128,
-    resampling: str | dict = 'average',
-    extra_dim: str = None,
     clear_attrs: bool = False,
 ) -> xr.Dataset:
     """Create a level of a multiscale pyramid of a dataset via resampling.
@@ -49,10 +39,6 @@ def level_resample(
         The level of the pyramid to create.
     pixels_per_tile : int, optional
         Number of pixels per tile
-    resampling : dict
-        Rasterio warp resampling method to use. Keys are variable names and values are warp resampling methods.
-    extra_dim : str, optional
-        The name of the extra dimension to iterate over. Default is None.
     clear_attrs : bool, False
         Clear the attributes of the DataArrays within the multiscale level. Default is False.
 
@@ -77,44 +63,20 @@ def level_resample(
     }
     dim = 2**level * pixels_per_tile
     projection_model = Projection(name=projection)
-    dst_transform = projection_model.transform(dim=dim)
-
-    # Convert resampling from string to dictionary if necessary
-    if isinstance(resampling, str):
-        resampling_dict: dict = defaultdict(lambda: resampling)
-    else:
-        resampling_dict = resampling
 
     # create the data array for each level
     ds_level = xr.Dataset(attrs=ds.attrs)
     for k, da in ds.items():
         if clear_attrs:
             da.attrs.clear()
-        if len(da.shape) == 4:
+        if len(da.shape) > 3:
             # if extra_dim is not specified, raise an error
-            if extra_dim is None:
-                raise ValueError("must specify 'extra_dim' to iterate over 4d data")
-            da_all = []
-            for index in ds[extra_dim]:
-                # resample each index of the 4th dimension
-                da_resampled = _da_resample(
-                    da.sel({extra_dim: index}),
-                    dim=dim,
-                    crs=projection_model._crs,
-                    resampling=Resampling[resampling_dict[k]],
-                    transform=dst_transform,
-                )
-                da_all.append(da_resampled)
-            ds_level[k] = xr.concat(da_all, ds[extra_dim])
+            raise NotImplementedError(
+                '4+ dimensional datasets are not currently supported for pyramid_resample.'
+            )
         else:
             # if the data array is not 4D, just resample it
-            ds_level[k] = _da_resample(
-                da,
-                dim=dim,
-                crs=projection_model._crs,
-                resampling=Resampling[resampling_dict[k]],
-                transform=dst_transform,
-            )
+            ds_level[k] = _da_resample(da, dim=dim, projection_model=projection_model)
     ds_level.attrs['multiscales'] = attrs['multiscales']
     return ds_level
 
@@ -126,8 +88,6 @@ def pyramid_resample(
     levels: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
-    resampling: str | dict = 'average',
-    extra_dim: str = None,
     clear_attrs: bool = False,
 ) -> dt.DataTree:
     """Create a multiscale pyramid of a dataset via resampling.
@@ -145,11 +105,6 @@ def pyramid_resample(
         Number of pixels per tile, by default 128
     other_chunks : dict
         Chunks for non-spatial dims to pass to :py:meth:`~xr.Dataset.chunk`. Default is None
-    resampling : str or dict, optional
-        Rasterio warp resampling method to use. Default is 'average'.
-        If a dict, keys are variable names and values are warp resampling methods.
-    extra_dim : str, optional
-        The name of the extra dimension to iterate over. Default is None.
     clear_attrs : bool, False
         Clear the attributes of the DataArrays within the multiscale pyramid. Default is False.
 
@@ -182,8 +137,6 @@ def pyramid_resample(
             projection=projection,
             level=level,
             pixels_per_tile=pixels_per_tile,
-            resampling=resampling,
-            extra_dim=extra_dim,
             clear_attrs=clear_attrs,
         )
 
