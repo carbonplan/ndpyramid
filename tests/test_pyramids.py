@@ -1,18 +1,10 @@
 import numpy as np
 import pytest
-import xarray as xr
 from zarr.storage import MemoryStore
 
 from ndpyramid import pyramid_coarsen, pyramid_regrid, pyramid_reproject
 from ndpyramid.regrid import generate_weights_pyramid, make_grid_ds
 from ndpyramid.testing import verify_bounds
-
-
-@pytest.fixture
-def temperature():
-    ds = xr.tutorial.open_dataset('air_temperature')
-    ds['air'].encoding = {}
-    return ds
 
 
 def test_xarray_coarsened_pyramid(temperature, benchmark):
