@@ -16,8 +16,18 @@ class Projection(pydantic.BaseModel):
 
         super().__init__(**data)
         epsg_codes = {'web-mercator': 'EPSG:3857', 'equidistant-cylindrical': 'EPSG:4326'}
+        area_extents = {
+            'web-mercator': (
+                -20037508.342789244,
+                -20037508.342789248,
+                20037508.342789248,
+                20037508.342789244,
+            ),
+            'equidistant-cylindrical': (-180, 180, 90, -90),
+        }
         self._crs = epsg_codes[self.name]
         self._proj = pyproj.Proj(self._crs)
+        self._area_extent = area_extents[self.name]
 
     @pydantic.validate_call
     def transform(self, *, dim: int) -> rasterio.transform.Affine:
