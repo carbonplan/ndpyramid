@@ -85,6 +85,22 @@ def test_resampled_pyramid(temperature, benchmark):
     pytest.importorskip('rioxarray')
     levels = 2
     temperature = temperature.rio.write_crs('EPSG:4326')
+    temperature = temperature.isel(time=0).drop('time')
+    pyramid = benchmark(lambda: pyramid_resample(temperature, levels=levels, x='lon', y='lat'))
+    verify_bounds(pyramid)
+    assert pyramid.ds.attrs['multiscales']
+    assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels
+    assert pyramid.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
+    assert pyramid['0'].attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
+    pyramid.to_zarr(MemoryStore())
+
+
+def test_resampled_pyramid_2D(temperature, benchmark):
+    pytest.importorskip('pyresample')
+    pytest.importorskip('rioxarray')
+    levels = 2
+    temperature = temperature.rio.write_crs('EPSG:4326')
+    temperature = temperature.isel(time=0).drop('time')
     pyramid = benchmark(lambda: pyramid_resample(temperature, levels=levels, x='lon', y='lat'))
     verify_bounds(pyramid)
     assert pyramid.ds.attrs['multiscales']
