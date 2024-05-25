@@ -81,6 +81,7 @@ def test_reprojected_pyramid_fill(temperature, benchmark):
 
 
 def test_resampled_pyramid(temperature, benchmark):
+    pytest.importorskip('pyresample')
     pytest.importorskip('rioxarray')
     levels = 2
     temperature = temperature.rio.write_crs('EPSG:4326')
@@ -97,6 +98,7 @@ def test_resampled_pyramid_fill(temperature, benchmark):
     """
     Test for https://github.com/carbonplan/ndpyramid/issues/93.
     """
+    pytest.importorskip('pyresample')
     pytest.importorskip('rioxarray')
     temperature = temperature.rio.write_crs('EPSG:4326')
     pyramid = benchmark(lambda: pyramid_resample(temperature, levels=1, x='lon', y='lat'))

@@ -3,14 +3,6 @@ from __future__ import annotations  # noqa: F401
 import datatree as dt
 import numpy as np
 import xarray as xr
-from pyresample.area_config import create_area_def
-from pyresample.future.resamplers.resampler import add_crs_xy_coords, update_resampled_coords
-from pyresample.gradient import (
-    block_bilinear_interpolator,
-    gradient_resampler_indices_block,
-)
-from pyresample.resampler import resample_blocks
-from pyresample.utils.cf import load_cf_area
 
 from .common import Projection, ProjectionOptions
 from .utils import (
@@ -21,25 +13,32 @@ from .utils import (
 )
 
 
-def _create_target_area(*, dim, projection_model):
-    return create_area_def(
+def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk):
+    try:
+        from pyresample.area_config import create_area_def
+        from pyresample.future.resamplers.resampler import (
+            add_crs_xy_coords,
+            update_resampled_coords,
+        )
+        from pyresample.gradient import (
+            block_bilinear_interpolator,
+            gradient_resampler_indices_block,
+        )
+        from pyresample.resampler import resample_blocks
+        from pyresample.utils.cf import load_cf_area
+    except ImportError as e:
+        raise ImportError(
+            'The use of pyramid_resample requires the packages pyresample and dask'
+        ) from e
+    if da.encoding.get('_FillValue') is None and np.issubdtype(da.dtype, np.floating):
+        da.encoding['_FillValue'] = np.nan
+    target_area_def = create_area_def(
         area_id=projection_model.name,
         projection=projection_model._crs,
         shape=(dim, dim),
         area_extent=projection_model._area_extent,
     )
-
-
-def _create_source_area(da):
-    ds = da.to_dataset(name='var')
-    return load_cf_area(ds, variable='var')[0]
-
-
-def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk):
-    if da.encoding.get('_FillValue') is None and np.issubdtype(da.dtype, np.floating):
-        da.encoding['_FillValue'] = np.nan
-    target_area_def = _create_target_area(dim=dim, projection_model=projection_model)
-    source_area_def = _create_source_area(da)
+    source_area_def = load_cf_area(da.to_dataset(name='var'), variable='var')[0]
     indices_xy = resample_blocks(
         gradient_resampler_indices_block,
         source_area_def,
