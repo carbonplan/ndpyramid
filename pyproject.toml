@@ -30,13 +30,12 @@ dependencies = [
     "zarr",
     "pydantic>=1.10",
     "pyproj",
+    "rasterio"
 ]
 
 
 [project.optional-dependencies]
-regrid = ["xesmf"]
-reproject = ["rasterio"]
-complete = ["ndpyramid[regrid,reproject]"]
+xesmf = ["xesmf"]
 
 test = [
     "dask",

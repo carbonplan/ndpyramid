@@ -27,8 +27,7 @@ python -m pip install -e .
 Depending on your use case you can specify optional dependencies on install.
 
 ```
-python -m pip install "ndpyramid[reproject]"  # Install optional dependencies for regridding
-python -m pip install "ndpyramid[regrid]"     # Install optional dependencies for reprojecting
-python -m pip install "ndpyramid[complete]"   # Install all optional dependencies
+python -m pip install "ndpyramid[xesmf]"     # Install optional dependencies for regridding
+
 
 ```
