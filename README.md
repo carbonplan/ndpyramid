@@ -40,6 +40,17 @@ cd ndpyramid
 python -m pip install -e .
 ```
 
+## optional dependencies
+
+Depending on your use case you can specify optional dependencies on install.
+
+```
+python -m pip install "ndpyramid[reproject]"  # Install optional dependencies for regridding
+python -m pip install "ndpyramid[regrid]"     # Install optional dependencies for reprojecting
+python -m pip install "ndpyramid[complete]"   # Install all optional dependencies
+
+```
+
 # usage
 
 Ndpyramid provides a set of utilities for creating pyramids with standardized metadata.
