@@ -11,4 +11,4 @@ dependencies:
   - numpydoc
   - myst-parser
   - pip:
-      - -e ..
+      - -e "..[complete]"
