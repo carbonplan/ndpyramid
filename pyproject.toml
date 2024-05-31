@@ -23,17 +23,20 @@ classifiers = [
 ]
 dynamic = ["version"]
 
+
 dependencies = [
     "cf_xarray>=0.8.0",
     "xarray-datatree >= 0.0.11",
     "zarr",
     "pydantic>=1.10",
-    "rasterio",
     "pyproj",
+    "rasterio"
 ]
 
 
 [project.optional-dependencies]
+xesmf = ["xesmf"]
+
 test = [
     "dask",
     "mercantile",
