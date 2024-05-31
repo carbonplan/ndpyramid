@@ -147,6 +147,7 @@ def add_metadata_and_zarr_encoding(
         pyramid.ds.attrs['multiscales'][0]['datasets'][level]['pixels_per_tile'] = pixels_per_tile
         if projection:
             pyramid.ds.attrs['multiscales'][0]['datasets'][level]['crs'] = projection._crs
+        
         # set dataset chunks
         pyramid[slevel].ds = pyramid[slevel].ds.chunk(chunks)
 
