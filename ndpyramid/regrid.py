@@ -2,6 +2,7 @@ from __future__ import annotations  # noqa: F401
 
 import itertools
 import typing
+import warnings
 
 import datatree as dt
 import numpy as np
@@ -177,7 +178,7 @@ def generate_weights_pyramid(
     plevels['/'] = root
     return dt.DataTree.from_dict(plevels)
 
-def pyramid_regrid_sparse(
+def pyramid_regrid(
     ds: xr.Dataset,
     projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     target_pyramid: dt.DataTree = None,
@@ -277,14 +278,10 @@ def pyramid_regrid_sparse(
 
             ds_w = weights_pyramid[str(level)].ds
             weights = _reconstruct_xesmf_weights(ds_w)
-            #regridder = xe.Regridder(
-            #    ds, grid, method, reuse_weights=True, weights=weights, **regridder_kws
-            #)
         
         # regrid
         if regridder_apply_kws is None:
             regridder_apply_kws = {}
-        #regridder_apply_kws = {**{'keep_attrs': True}, **regridder_apply_kws}
 
         plevels[str(level)] = xr_regridder(ds, grid, weights, out_grid_shape=(grid.sizes['x'], grid.sizes['y']))
         
@@ -339,6 +336,8 @@ def xr_regridder(
     shape_in = (ds.sizes['nlat'], ds.sizes['nlon'])
     shape_out = out_grid_shape
 
+    output_sizes = {'nlat': out_grid_shape[0], 'nlon': out_grid_shape[1]}
+
     # make sure coords along non-core dims are propagated 
     # (this is probably superfluous now we're using xr.apply_ufunc)
     non_lateral_dims = [d for d in ds.dims if d not in latlon_dims]
@@ -352,6 +351,9 @@ def xr_regridder(
         output_core_dims=[latlon_dims],
         exclude_dims=set(latlon_dims),
         kwargs={'shape_in': shape_in, 'shape_out': shape_out},
+        dask='parallelized',
+        dask_gufunc_kwargs={'output_sizes': output_sizes},
+        output_dtypes=[np.float32],  # bug in xarray here where you can't pass output_dtypes via dask_gufunc_kwargs
         keep_attrs=True,
     ).rename_dims(nlon='x', nlat='y')
 
@@ -391,18 +393,23 @@ def esmf_apply_weights(weights, indata, shape_in, shape_out):
     shape_horiz = indata.shape[-2:]
     extra_shape = indata.shape[0:-2]
 
-    assert shape_horiz == shape_in, (
-        "The horizontal shape of input data is {}, different from that of"
-        "the regridder {}!".format(shape_horiz, shape_in)
+    if shape_horiz != shape_in:
+        raise ValueError(
+            f"The horizontal shape of input data is {shape_horiz}, different from that of"
+            f"the regridder {shape_in}!"
         )
 
-    assert shape_in[0] * shape_in[1] == weights.shape[1], (
-        "ny_in * nx_in should equal to weights.shape[1]"
-    )
+    n_points_in = shape_in[0] * shape_in[1]
+    if n_points_in != weights.shape[1]:
+        raise ValueError(
+            f"ny_in * nx_in should equal to weights.shape[1], but found {n_points_in} vs {weights.shape[1]}"
+        )
 
-    assert shape_out[0] * shape_out[1] == weights.shape[0], (
-        "ny_out * nx_out should equal to weights.shape[0]"
-    )
+    n_points_out = shape_out[0] * shape_out[1]
+    if n_points_out != weights.shape[0]:
+        raise ValueError(
+            f"ny_out * nx_out should equal to weights.shape[0], but found {n_points_out} vs {weights.shape[0]}"
+        )
 
     # use flattened array for dot operation
     indata_flat = indata.reshape(-1, shape_in[0]*shape_in[1])
