@@ -67,6 +67,8 @@ def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk):
 def level_resample(
     ds: xr.Dataset,
     *,
+    x, 
+    y, 
     projection: ProjectionOptions = 'web-mercator',
     level: int,
     pixels_per_tile: int = 128,
@@ -79,6 +81,10 @@ def level_resample(
     ----------
     ds : xarray.Dataset
         The dataset to create a multiscale pyramid of.
+    y : string
+        name of the variable to use as 'y' axis of the CF area definition
+    x : string
+        name of the variable to use as 'x' axis of the CF area definition
     projection : str, optional
         The projection to use. Default is 'web-mercator'.
     level : int
@@ -100,6 +106,7 @@ def level_resample(
     Pyramid generation by level is experimental and subject to change.
     """
 
+
     dim = 2**level * pixels_per_tile
     projection_model = Projection(name=projection)
     save_kwargs = {'pixels_per_tile': pixels_per_tile}
@@ -112,6 +119,13 @@ def level_resample(
             kwargs=save_kwargs,
         )
     }
+    # update coord naming to x & y and ensure order of dims is time, y, x
+    ds = ds.rename({x: 'x', y: 'y'})
+    if 'time' in ds.dims:
+        ds = ds.transpose('time', 'y', 'x')
+    else:
+        ds = ds.transpose('y', 'x')
+
 
     # create the data array for each level
     ds_level = xr.Dataset(attrs=ds.attrs)
@@ -194,12 +208,13 @@ def pyramid_resample(
 
     # set up pyramid
     plevels = {}
-    ds = ds.rename({x: 'x', y: 'y'})
 
     # pyramid data
     for level in range(levels):
         plevels[str(level)] = level_resample(
             ds,
+            x=x, 
+            y=y, 
             projection=projection,
             level=level,
             pixels_per_tile=pixels_per_tile,
