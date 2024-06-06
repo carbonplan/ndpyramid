@@ -3,6 +3,7 @@ from __future__ import annotations  # noqa: F401
 import datatree as dt
 import numpy as np
 import xarray as xr
+from pyproj.crs import CRS
 
 from .common import Projection, ProjectionOptions
 from .utils import (
@@ -38,7 +39,20 @@ def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk):
         shape=(dim, dim),
         area_extent=projection_model._area_extent,
     )
-    source_area_def = load_cf_area(da.to_dataset(name='var'), variable='var')[0]
+    try:
+        source_area_def = load_cf_area(da.to_dataset(name='var'), variable='var')[0]
+    except ValueError:
+        lx = da.x[0] - (da.x[1] - da.x[0]) / 2
+        rx = da.x[-1] + (da.x[-1] - da.x[-2]) / 2
+        uy = da.y[0] - (da.y[1] - da.y[0]) / 2
+        ly = da.y[-1] + (da.y[-1] - da.y[-2]) / 2
+        source_crs = CRS.from_string(da.rio.crs.to_string())
+        source_area_def = create_area_def(
+            area_id=2,
+            projection=source_crs,
+            shape=(da.sizes['y'], da.sizes['x']),
+            area_extent=(lx.values, ly.values, rx.values, uy.values),
+        )
     indices_xy = resample_blocks(
         gradient_resampler_indices_block,
         source_area_def,
@@ -67,8 +81,8 @@ def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk):
 def level_resample(
     ds: xr.Dataset,
     *,
-    x, 
-    y, 
+    x,
+    y,
     projection: ProjectionOptions = 'web-mercator',
     level: int,
     pixels_per_tile: int = 128,
@@ -106,7 +120,6 @@ def level_resample(
     Pyramid generation by level is experimental and subject to change.
     """
 
-
     dim = 2**level * pixels_per_tile
     projection_model = Projection(name=projection)
     save_kwargs = {'pixels_per_tile': pixels_per_tile}
@@ -125,7 +138,6 @@ def level_resample(
         ds = ds.transpose('time', 'y', 'x')
     else:
         ds = ds.transpose('y', 'x')
-
 
     # create the data array for each level
     ds_level = xr.Dataset(attrs=ds.attrs)
@@ -213,8 +225,8 @@ def pyramid_resample(
     for level in range(levels):
         plevels[str(level)] = level_resample(
             ds,
-            x=x, 
-            y=y, 
+            x=x,
+            y=y,
             projection=projection,
             level=level,
             pixels_per_tile=pixels_per_tile,
