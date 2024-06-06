@@ -21,3 +21,13 @@ git clone https://github.com/carbonplan/ndpyramid
 cd ndpyramid
 python -m pip install -e .
 ```
+
+## optional dependencies
+
+Depending on your use case you can specify optional dependencies on install.
+
+```
+python -m pip install "ndpyramid[xesmf]"     # Install optional dependencies for regridding
+
+
+```
