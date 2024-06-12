@@ -122,6 +122,7 @@ def make_grid_ds(
 def make_grid_pyramid(
     levels: int = 6,
     projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    pixels_per_tile: int = 128,
 ) -> dt.DataTree:
     """helper function to create a grid pyramid for use with xesmf
 
@@ -136,7 +137,10 @@ def make_grid_pyramid(
         Multiscale grid definition
     """
     plevels = {
-        str(level): make_grid_ds(level, projection=projection).chunk(-1) for level in range(levels)
+        str(level): make_grid_ds(
+            level, projection=projection, pixels_per_tile=pixels_per_tile
+        ).chunk(-1)
+        for level in range(levels)
     }
     return dt.DataTree.from_dict(plevels)
 
@@ -233,7 +237,9 @@ def pyramid_regrid(
 
     if target_pyramid is None:
         if levels is not None:
-            target_pyramid = make_grid_pyramid(levels, projection=projection)
+            target_pyramid = make_grid_pyramid(
+                levels, projection=projection, pixels_per_tile=pixels_per_tile
+            )
         else:
             raise ValueError('must either provide a target_pyramid or number of levels')
     if levels is None:
