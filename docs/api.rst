@@ -14,3 +14,4 @@ Top level API
    pyramid_create
    pyramid_reproject
    pyramid_regrid
+   pyramid_resample

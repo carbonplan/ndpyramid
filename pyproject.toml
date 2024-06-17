@@ -33,8 +33,17 @@ dependencies = [
     "rasterio"
 ]
 
-
 [project.optional-dependencies]
+dask = [
+    "dask",
+    "pyresample",
+]
+jupyter = [
+    'notebook',
+    'ipytree>=0.2.2',
+    'ipywidgets>=8.0.0',
+    'matplotlib'
+]
 xesmf = ["xesmf"]
 
 test = [

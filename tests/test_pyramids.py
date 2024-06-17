@@ -3,7 +3,13 @@ import pytest
 import xarray as xr
 from zarr.storage import MemoryStore
 
-from ndpyramid import pyramid_coarsen, pyramid_create, pyramid_regrid, pyramid_reproject
+from ndpyramid import (
+    pyramid_coarsen,
+    pyramid_create,
+    pyramid_regrid,
+    pyramid_reproject,
+    pyramid_resample,
+)
 from ndpyramid.regrid import generate_weights_pyramid, make_grid_ds
 from ndpyramid.testing import verify_bounds
 
@@ -71,6 +77,72 @@ def test_reprojected_pyramid_fill(temperature, benchmark):
     pytest.importorskip('rioxarray')
     temperature = temperature.rio.write_crs('EPSG:4326')
     pyramid = benchmark(lambda: pyramid_reproject(temperature, levels=1))
+    assert np.isnan(pyramid['0'].air.isel(time=0, x=0, y=0).values)
+
+
+@pytest.mark.parametrize('resampling', ['bilinear', 'nearest'])
+def test_resampled_pyramid(temperature, benchmark, resampling):
+    pytest.importorskip('pyresample')
+    pytest.importorskip('rioxarray')
+    levels = 2
+    temperature = temperature.rio.write_crs('EPSG:4326')
+    temperature = temperature.isel(time=0).drop('time')
+    # import pdb; pdb.set_trace()
+
+    pyramid = benchmark(
+        lambda: pyramid_resample(
+            temperature, levels=levels, x='lon', y='lat', resampling=resampling
+        )
+    )
+    verify_bounds(pyramid)
+    assert pyramid.ds.attrs['multiscales']
+    assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels
+    assert pyramid.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
+    assert pyramid['0'].attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
+    pyramid.to_zarr(MemoryStore())
+
+
+@pytest.mark.xfail(reseason='Differences between rasterio and pyresample to be investigated')
+def test_reprojected_resample_pyramid_values(temperature, benchmark):
+    pytest.importorskip('rioxarray')
+    levels = 2
+    temperature = temperature.rio.write_crs('EPSG:4326')
+    temperature = temperature.chunk({'time': 10, 'lat': 10, 'lon': 10})
+    reprojected = benchmark(
+        lambda: pyramid_reproject(temperature, levels=levels, resampling='nearest')
+    )
+    resampled = benchmark(
+        lambda: pyramid_resample(
+            temperature, levels=levels, x='lon', y='lat', resampling='nearest_neighbour'
+        )
+    )
+    xr.testing.assert_allclose(reprojected['0'].ds, resampled['0'].ds)
+    xr.testing.assert_allclose(reprojected['1'].ds, resampled['1'].ds)
+
+
+def test_resampled_pyramid_2D(temperature, benchmark):
+    pytest.importorskip('pyresample')
+    pytest.importorskip('rioxarray')
+    levels = 2
+    temperature = temperature.rio.write_crs('EPSG:4326')
+    temperature = temperature.isel(time=0).drop('time')
+    pyramid = benchmark(lambda: pyramid_resample(temperature, levels=levels, x='lon', y='lat'))
+    verify_bounds(pyramid)
+    assert pyramid.ds.attrs['multiscales']
+    assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels
+    assert pyramid.attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
+    assert pyramid['0'].attrs['multiscales'][0]['datasets'][0]['crs'] == 'EPSG:3857'
+    pyramid.to_zarr(MemoryStore())
+
+
+def test_resampled_pyramid_fill(temperature, benchmark):
+    """
+    Test for https://github.com/carbonplan/ndpyramid/issues/93.
+    """
+    pytest.importorskip('pyresample')
+    pytest.importorskip('rioxarray')
+    temperature = temperature.rio.write_crs('EPSG:4326')
+    pyramid = benchmark(lambda: pyramid_resample(temperature, levels=1, x='lon', y='lat'))
     assert np.isnan(pyramid['0'].air.isel(time=0, x=0, y=0).values)
 
 
