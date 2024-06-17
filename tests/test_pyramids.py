@@ -80,7 +80,8 @@ def test_reprojected_pyramid_fill(temperature, benchmark):
     assert np.isnan(pyramid['0'].air.isel(time=0, x=0, y=0).values)
 
 
-def test_resampled_pyramid(temperature, benchmark):
+@pytest.mark.parametrize('resampling', ['bilinear', 'nearest'])
+def test_resampled_pyramid(temperature, benchmark, resampling):
     pytest.importorskip('pyresample')
     pytest.importorskip('rioxarray')
     levels = 2
@@ -88,7 +89,11 @@ def test_resampled_pyramid(temperature, benchmark):
     temperature = temperature.isel(time=0).drop('time')
     # import pdb; pdb.set_trace()
 
-    pyramid = benchmark(lambda: pyramid_resample(temperature, levels=levels, x='lon', y='lat'))
+    pyramid = benchmark(
+        lambda: pyramid_resample(
+            temperature, levels=levels, x='lon', y='lat', resampling=resampling
+        )
+    )
     verify_bounds(pyramid)
     assert pyramid.ds.attrs['multiscales']
     assert len(pyramid.ds.attrs['multiscales'][0]['datasets']) == levels

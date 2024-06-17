@@ -1,5 +1,7 @@
 from __future__ import annotations  # noqa: F401
 
+from collections import defaultdict
+
 import datatree as dt
 import numpy as np
 import xarray as xr
@@ -14,7 +16,7 @@ from .utils import (
 )
 
 
-def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk):
+def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk, resampling):
     try:
         from pyresample.area_config import create_area_def
         from pyresample.future.resamplers.resampler import (
@@ -23,6 +25,7 @@ def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk):
         )
         from pyresample.gradient import (
             block_bilinear_interpolator,
+            block_nn_interpolator,
             gradient_resampler_indices_block,
         )
         from pyresample.resampler import resample_blocks
@@ -33,6 +36,12 @@ def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk):
         ) from e
     if da.encoding.get('_FillValue') is None and np.issubdtype(da.dtype, np.floating):
         da.encoding['_FillValue'] = np.nan
+    if resampling == 'bilinear':
+        fun = block_bilinear_interpolator
+    elif resampling in ['nearest_neighbor' 'nearest_neighbour', 'nn', 'nearest']:
+        fun = block_nn_interpolator
+    else:
+        raise ValueError(f"Unrecognized interpolation method {resampling} for gradient resampling.")
     target_area_def = create_area_def(
         area_id=projection_model.name,
         projection=projection_model._crs,
@@ -62,7 +71,7 @@ def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk):
         dtype=float,
     )
     resampled = resample_blocks(
-        block_bilinear_interpolator,
+        fun,
         source_area_def,
         [da.data],
         target_area_def,
@@ -87,6 +96,7 @@ def level_resample(
     level: int,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
+    resampling: str | dict = 'bilinear',
     clear_attrs: bool = False,
 ) -> xr.Dataset:
     """Create a level of a multiscale pyramid of a dataset via resampling.
@@ -107,6 +117,9 @@ def level_resample(
         Number of pixels per tile
     other_chunks : dict
         Chunks for non-spatial dims.
+    resampling : str or dict, optional
+        Pyresample resampling method to use. Default is 'bilinear'.
+        If a dict, keys are variable names and values are resampling methods.
     clear_attrs : bool, False
         Clear the attributes of the DataArrays within the multiscale level. Default is False.
 
@@ -132,13 +145,14 @@ def level_resample(
             kwargs=save_kwargs,
         )
     }
+
+    # Convert resampling from string to dictionary if necessary
+    if isinstance(resampling, str):
+        resampling_dict: dict = defaultdict(lambda: resampling)
+    else:
+        resampling_dict = resampling
     # update coord naming to x & y and ensure order of dims is time, y, x
     ds = ds.rename({x: 'x', y: 'y'})
-    if 'time' in ds.dims:
-        ds = ds.transpose('time', 'y', 'x')
-    else:
-        ds = ds.transpose('y', 'x')
-
     # create the data array for each level
     ds_level = xr.Dataset(attrs=ds.attrs)
     for k, da in ds.items():
@@ -161,8 +175,10 @@ def level_resample(
                 projection_model=projection_model,
                 pixels_per_tile=pixels_per_tile,
                 other_chunk=other_chunk,
+                resampling=resampling_dict[k],
             )
     ds_level.attrs['multiscales'] = attrs['multiscales']
+    ds_level = ds_level.rio.write_crs(projection_model._crs)
     return ds_level
 
 
@@ -175,6 +191,7 @@ def pyramid_resample(
     levels: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
+    resampling: str | dict = 'bilinear',
     clear_attrs: bool = False,
 ) -> dt.DataTree:
     """Create a multiscale pyramid of a dataset via resampling.
@@ -184,11 +201,11 @@ def pyramid_resample(
     ds : xarray.Dataset
         The dataset to create a multiscale pyramid of.
     y : string
-        name of the variable to use as 'y' axis of the CF area definition
+        name of the variable to use as ``y`` axis of the CF area definition
     x : string
-        name of the variable to use as 'x' axis of the CF area definition
+        name of the variable to use as ``x`` axis of the CF area definition
     projection : str, optional
-        The projection to use. Default is 'web-mercator'.
+        The projection to use. Default is ``web-mercator``.
     levels : int, optional
         The number of levels to create. If None, the number of levels is
         determined by the number of tiles in the dataset.
@@ -196,6 +213,9 @@ def pyramid_resample(
         Number of pixels per tile, by default 128
     other_chunks : dict
         Chunks for non-spatial dims to pass to :py:meth:`~xr.Dataset.chunk`. Default is None
+    resampling : str or dict, optional
+        Pyresample resampling method to use (``bilinear`` or ``nearest``). Default is ``bilinear``.
+        If a dict, keys are variable names and values are resampling methods.
     clear_attrs : bool, False
         Clear the attributes of the DataArrays within the multiscale pyramid. Default is False.
 
@@ -203,6 +223,13 @@ def pyramid_resample(
     -------
     dt.DataTree
         The multiscale pyramid.
+
+    Warnings
+    --------
+    - Pyresample expects longitude ranges between -180 - 180 degrees and latitude ranges between -90 and 90 degrees.
+    - 3-D datasets are expected to have a dimension order of ``(time, y, x)``.
+
+    ``Ndpyramid`` and ``pyresample`` do not check the validity of these assumptions to improve performance.
 
     """
     if not levels:
@@ -231,6 +258,7 @@ def pyramid_resample(
             level=level,
             pixels_per_tile=pixels_per_tile,
             other_chunks=other_chunks,
+            resampling=resampling,
             clear_attrs=clear_attrs,
         )
 
