@@ -1,5 +1,6 @@
 from __future__ import annotations  # noqa: F401
 
+import warnings
 from collections import defaultdict
 
 import datatree as dt
@@ -50,7 +51,11 @@ def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk, res
     )
     try:
         source_area_def = load_cf_area(da.to_dataset(name='var'), variable='var')[0]
-    except ValueError:
+    except ValueError as e:
+        warnings.warn(
+            f"Automatic determination of source AreaDefinition from CF conventions failed with {e}."
+            ' Falling back to AreaDefinition creation from coordinates.'
+        )
         lx = da.x[0] - (da.x[1] - da.x[0]) / 2
         rx = da.x[-1] + (da.x[-1] - da.x[-2]) / 2
         uy = da.y[0] - (da.y[1] - da.y[0]) / 2
