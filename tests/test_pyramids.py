@@ -97,6 +97,24 @@ def test_resampled_pyramid(temperature, benchmark):
     pyramid.to_zarr(MemoryStore())
 
 
+@pytest.mark.xfail(reseason='Differences between rasterio and pyresample to be investigated')
+def test_reprojected_resample_pyramid_values(temperature, benchmark):
+    pytest.importorskip('rioxarray')
+    levels = 2
+    temperature = temperature.rio.write_crs('EPSG:4326')
+    temperature = temperature.chunk({'time': 10, 'lat': 10, 'lon': 10})
+    reprojected = benchmark(
+        lambda: pyramid_reproject(temperature, levels=levels, resampling='nearest')
+    )
+    resampled = benchmark(
+        lambda: pyramid_resample(
+            temperature, levels=levels, x='lon', y='lat', resampling='nearest_neighbour'
+        )
+    )
+    xr.testing.assert_allclose(reprojected['0'].ds, resampled['0'].ds)
+    xr.testing.assert_allclose(reprojected['1'].ds, resampled['1'].ds)
+
+
 def test_resampled_pyramid_2D(temperature, benchmark):
     pytest.importorskip('pyresample')
     pytest.importorskip('rioxarray')
