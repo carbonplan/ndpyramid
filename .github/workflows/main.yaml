@@ -20,6 +20,8 @@ jobs:
     if: github.repository == 'carbonplan/ndpyramid'
     name: ${{ matrix.python-version }}-build
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write # This is required for requesting OIDC token for codecov
     strategy:
       fail-fast: false
       matrix:
@@ -51,9 +53,11 @@ jobs:
           conda list
       - name: Run tests
         run: |
-          python -m pytest
+          python -m pytest --cov=./ --cov-report=xml --verbose
       - name: Upload coverage to Codecov
+        if: ${{ matrix.python-version }} == "3.11"
         uses: codecov/codecov-action@v4
         with:
           file: ./coverage.xml
           fail_ci_if_error: false
+          use_oidc: true
