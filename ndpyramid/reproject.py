@@ -16,7 +16,7 @@ from .utils import (
 )
 
 
-def _da_reproject(da, *, dim, crs, resampling, transform):
+def _da_reproject(da: xr.DataArray, *, dim: int, crs: str, resampling: str, transform):
     if da.encoding.get('_FillValue') is None and np.issubdtype(da.dtype, np.floating):
         da.encoding['_FillValue'] = np.nan
     return da.rio.reproject(

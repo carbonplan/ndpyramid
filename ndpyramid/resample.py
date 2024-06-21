@@ -1,5 +1,6 @@
 from __future__ import annotations  # noqa: F401
 
+import typing
 import warnings
 from collections import defaultdict
 
@@ -16,8 +17,18 @@ from .utils import (
     multiscales_template,
 )
 
+ResamplingOptions = typing.Literal['bilinear', 'nearest']
 
-def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk, resampling):
+
+def _da_resample(
+    da: xr.DataArray,
+    *,
+    dim: int,
+    projection_model: Projection,
+    pixels_per_tile: int,
+    other_chunk: int,
+    resampling: ResamplingOptions,
+):
     try:
         from pyresample.area_config import create_area_def
         from pyresample.future.resamplers.resampler import (
@@ -39,7 +50,7 @@ def _da_resample(da, *, dim, projection_model, pixels_per_tile, other_chunk, res
         da.encoding['_FillValue'] = np.nan
     if resampling == 'bilinear':
         fun = block_bilinear_interpolator
-    elif resampling in ['nearest_neighbor' 'nearest_neighbour', 'nn', 'nearest']:
+    elif resampling == 'nearest':
         fun = block_nn_interpolator
     else:
         raise ValueError(f"Unrecognized interpolation method {resampling} for gradient resampling.")
@@ -101,7 +112,7 @@ def level_resample(
     level: int,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
-    resampling: str | dict = 'bilinear',
+    resampling: ResamplingOptions | dict = 'bilinear',
     clear_attrs: bool = False,
 ) -> xr.Dataset:
     """Create a level of a multiscale pyramid of a dataset via resampling.
@@ -196,7 +207,7 @@ def pyramid_resample(
     levels: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
-    resampling: str | dict = 'bilinear',
+    resampling: ResamplingOptions | dict = 'bilinear',
     clear_attrs: bool = False,
 ) -> dt.DataTree:
     """Create a multiscale pyramid of a dataset via resampling.
