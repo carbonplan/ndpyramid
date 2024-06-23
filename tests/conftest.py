@@ -1,12 +1,23 @@
 import numpy as np
 import pandas as pd
 import pytest
+import rioxarray  # noqa
 import xarray as xr
 
 
 @pytest.fixture
 def temperature():
     ds = xr.tutorial.open_dataset('air_temperature')
+    lon = ds['lon'].where(ds['lon'] < 180, ds['lon'] - 360)
+    ds = ds.assign_coords(lon=lon)
+
+    if not (ds['lon'].diff(dim='lon') > 0).all():
+        ds = ds.reindex(lon=np.sort(ds['lon'].data))
+
+    if 'lon_bounds' in ds.variables:
+        lon_b = ds['lon_bounds'].where(ds['lon_bounds'] < 180, ds['lon_bounds'] - 360)
+        ds = ds.assign_coords(lon_bounds=lon_b)
+    ds = ds.chunk({'time': 100, 'lat': 10, 'lon': 10})
     ds['air'].encoding = {}
     return ds
 

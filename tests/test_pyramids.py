@@ -89,7 +89,7 @@ def test_reprojected_pyramid_4d(dataset_4d, benchmark):
     pytest.importorskip('rioxarray')
     levels = 2
     with pytest.raises(Exception):
-        pyramid = benchmark(lambda: pyramid_reproject(dataset_4d, levels=levels))
+        pyramid = pyramid_reproject(dataset_4d, levels=levels)
     pyramid = benchmark(lambda: pyramid_reproject(dataset_4d, levels=levels, extra_dim='band'))
     verify_bounds(pyramid)
     assert pyramid.ds.attrs['multiscales']
