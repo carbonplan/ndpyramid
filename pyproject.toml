@@ -30,12 +30,20 @@ dependencies = [
     "zarr",
     "pydantic>=1.10",
     "pyproj",
-    "rasterio"
+    "rasterio",
 ]
 
 [project.optional-dependencies]
+complete = [
+    "ndpyramid[dask,jupyter,xesmf]",
+    "xarray[complete]",
+    "mercantile",
+    "cftime",
+    "scipy",
+    "rioxarray"
+]
 dask = [
-    "dask",
+    "dask[complete]",
     "pyresample",
 ]
 jupyter = [
@@ -47,17 +55,13 @@ jupyter = [
 xesmf = ["xesmf"]
 
 test = [
-    "dask",
-    "mercantile",
-    "pooch",
+    "ndpyramid[complete]",
     "pre-commit",
     "pytest-benchmark",
     "pytest-codspeed",
     "pytest-cov",
     "pytest-mypy",
     "pytest",
-    "rioxarray",
-    "scipy",
 ]
 
 
