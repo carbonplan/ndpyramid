@@ -18,3 +18,4 @@ Notebook Examples
     examples/pyramid-resample
     examples/pyramid-reproject
     examples/pyramid-regrid
+    examples/pyramid-create
