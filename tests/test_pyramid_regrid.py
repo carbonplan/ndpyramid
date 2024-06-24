@@ -12,6 +12,8 @@ from ndpyramid.testing import verify_bounds
 @pytest.mark.parametrize('regridder_apply_kws', [None, {'keep_attrs': False}])
 def test_regridded_pyramid(temperature, regridder_apply_kws, benchmark):
     pytest.importorskip('xesmf')
+    # Select subset to speed up tests
+    temperature = temperature.isel(time=slice(0, 5))
     pyramid = benchmark(
         lambda: pyramid_regrid(
             temperature, levels=2, regridder_apply_kws=regridder_apply_kws, other_chunks={'time': 2}
@@ -34,6 +36,8 @@ def test_regridded_pyramid(temperature, regridder_apply_kws, benchmark):
 def test_regridded_pyramid_with_weights(temperature, benchmark):
     pytest.importorskip('xesmf')
     levels = 2
+    # Select subset to speed up tests
+    temperature = temperature.isel(time=slice(0, 5))
     weights_pyramid = generate_weights_pyramid(temperature.isel(time=0), levels)
     pyramid = benchmark(
         lambda: pyramid_regrid(

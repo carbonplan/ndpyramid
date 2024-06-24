@@ -4,6 +4,7 @@ channels:
   - nodefaults
 dependencies:
   - dask
+  - ipykernel
   - jinja2
   - esmpy>=8.2.0
   - mercantile
