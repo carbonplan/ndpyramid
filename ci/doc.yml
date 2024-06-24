@@ -3,12 +3,39 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python=3.9
+  # Building docs
+  - python=3.10
   - pre-commit
   - pip
   - sphinx>=5.0
   - sphinx-book-theme >= 0.3.0
+  - sphinx-copybutton
+  - sphinx-design
   - numpydoc
   - myst-parser
+  - nbsphinx
+  # Running examples
+  - dask
+  - esmpy>=8.2.0
+  - mpich
+  - netcdf4
+  - numpy
+  - pooch
+  - pydantic>=1.10
+  - pyproj
+  - pyresample
+  - rasterio
+  - rioxarray
+  - s3fs
+  - scipy
+  - sparse>=0.13.0
+  - xarray
+  - xarray-datatree>=0.0.11
+  - xesmf
+  - zarr
+  - cf_xarray>=0.8.0
+  - fastparquet
+  - matplotlib
+  - ipykernel
   - pip:
-      - -e "..[xesmf]"
+      - -e ..

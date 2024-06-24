@@ -1,0 +1,13 @@
+notebooks-examples:
+  - title: Pyramids from GeoTiff
+    path: examples/geotiff.html
+    thumbnail: _static/thumbnails/geotiff.jpg
+  - title: Pyramids via pyresample
+    path: examples/pyramid-resample.html
+    thumbnail: _static/thumbnails/resample.jpg
+  - title: Pyramids via rasterio
+    path: examples/pyramid-reproject.html
+    thumbnail: _static/thumbnails/reproject.jpg
+  - title: Pyramids via xesmf
+    path: examples/pyramid-regrid.html
+    thumbnail: _static/thumbnails/regrid.jpg
