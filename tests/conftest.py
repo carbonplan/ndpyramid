@@ -7,6 +7,8 @@ import xarray as xr
 @pytest.fixture
 def temperature():
     ds = xr.tutorial.open_dataset('air_temperature')
+    time = ds.time.astype('datetime64[s]')
+    ds = ds.assign_coords(time=time)
     ds['air'].encoding = {}
     return ds
 
