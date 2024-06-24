@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+import rioxarray  # noqa
 import xarray as xr
 
 
