@@ -9,6 +9,7 @@ dependencies:
   - sphinx>=5.0
   - sphinx-book-theme >= 0.3.0
   - numpydoc
+  - numpy<2.0.0
   - myst-parser
   - pip:
       - -e "..[xesmf]"
