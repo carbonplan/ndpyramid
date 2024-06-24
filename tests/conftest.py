@@ -1,13 +1,33 @@
 import numpy as np
 import pandas as pd
 import pytest
+import rioxarray  # noqa
 import xarray as xr
 
 
 @pytest.fixture
 def temperature():
     ds = xr.tutorial.open_dataset('air_temperature')
-    ds['air'].encoding = {}
+    # Update time coordinate to avoid errors when casting to int32 for zarr-js
+    time = ds.time.astype('datetime64[s]')
+    ds = ds.assign_coords(time=time)
+    # Update lon coordinates to -180 to 180 for compatibility with pyresample
+    # Logic copied from carbonplan/cmip6-downscaling
+    lon = ds['lon'].where(ds['lon'] < 180, ds['lon'] - 360)
+    ds = ds.assign_coords(lon=lon)
+
+    if not (ds['lon'].diff(dim='lon') > 0).all():
+        ds = ds.reindex(lon=np.sort(ds['lon'].data))
+
+    if 'lon_bounds' in ds.variables:
+        lon_b = ds['lon_bounds'].where(ds['lon_bounds'] < 180, ds['lon_bounds'] - 360)
+        ds = ds.assign_coords(lon_bounds=lon_b)
+    # Transpose coordinates for compatibility with pyresample
+    ds = ds.transpose('time', 'lat', 'lon')
+    # Write crs for pyramid_resampled and pyramid_reproject
+    ds = ds.rio.write_crs('EPSG:4326')
+    # Chunk the dataset for testing `pyramid_resample`
+    ds = ds.chunk({'time': 1000, 'lat': 20, 'lon': 20})
     return ds
 
 

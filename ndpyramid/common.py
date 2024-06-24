@@ -16,14 +16,15 @@ class Projection(pydantic.BaseModel):
 
         super().__init__(**data)
         epsg_codes = {'web-mercator': 'EPSG:3857', 'equidistant-cylindrical': 'EPSG:4326'}
+        # Area extent for pyresample's `create_area_def` is (lower_left_x, lower_left_y, upper_right_x, upper_right_y)
         area_extents = {
             'web-mercator': (
                 -20037508.342789244,
                 -20037508.342789248,
-                20037508.342789248,
                 20037508.342789244,
+                20037508.342789248,
             ),
-            'equidistant-cylindrical': (-180, 180, 90, -90),
+            'equidistant-cylindrical': (-180, 90, 180, -90),
         }
         self._crs = epsg_codes[self.name]
         self._proj = pyproj.Proj(self._crs)

@@ -8,7 +8,7 @@ def _bounds(ds):
     right = ds.x[-1] + (ds.x[-1] - ds.x[-2]) / 2
     top = ds.y[0] - (ds.y[1] - ds.y[0]) / 2
     bottom = ds.y[-1] + (ds.y[-1] - ds.y[-2]) / 2
-    return (left.data, bottom.data, right.data, top.data)
+    return np.array([left.data, bottom.data, right.data, top.data])
 
 
 def verify_xy_bounds(ds, zoom):
@@ -16,8 +16,10 @@ def verify_xy_bounds(ds, zoom):
     Verifies that the bounds of a chunk conforms to expectations for a WebMercatorQuad.
     """
     tile = mercantile.tile(ds.x[0], ds.y[0], zoom)
-    expected = mercantile.xy_bounds(tile)
-    np.testing.assert_allclose(expected, _bounds(ds))
+    bbox = mercantile.xy_bounds(tile)
+    expected = np.array([bbox.left, bbox.bottom, bbox.right, bbox.top])
+    actual = _bounds(ds)
+    np.testing.assert_allclose(actual, expected)
     return ds
 
 
