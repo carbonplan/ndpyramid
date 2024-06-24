@@ -49,7 +49,6 @@ def test_xarray_custom_coarsened_pyramid(temperature, benchmark, method_label):
 def test_reprojected_pyramid(temperature, benchmark):
     pytest.importorskip('rioxarray')
     levels = 2
-    temperature = temperature.rio.write_crs('EPSG:4326')
     pyramid = benchmark(lambda: pyramid_reproject(temperature, levels=levels))
     verify_bounds(pyramid)
     assert pyramid.ds.attrs['multiscales']
@@ -104,6 +103,5 @@ def test_reprojected_pyramid_fill(temperature, benchmark):
     Test for https://github.com/carbonplan/ndpyramid/issues/93.
     """
     pytest.importorskip('rioxarray')
-    temperature = temperature.rio.write_crs('EPSG:4326')
     pyramid = benchmark(lambda: pyramid_reproject(temperature, levels=1))
     assert np.isnan(pyramid['0'].air.isel(time=0, x=0, y=0).values)

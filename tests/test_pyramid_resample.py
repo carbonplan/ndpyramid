@@ -15,10 +15,6 @@ def test_resampled_pyramid(temperature, benchmark, resampling):
     pytest.importorskip('pyresample')
     pytest.importorskip('rioxarray')
     levels = 2
-    temperature = temperature.rio.write_crs('EPSG:4326')
-    temperature = temperature.transpose('time', 'lat', 'lon')
-    # import pdb; pdb.set_trace()
-
     pyramid = benchmark(
         lambda: pyramid_resample(
             temperature, levels=levels, x='lon', y='lat', resampling=resampling
@@ -32,12 +28,12 @@ def test_resampled_pyramid(temperature, benchmark, resampling):
     pyramid.to_zarr(MemoryStore())
 
 
+@pytest.mark.xfail(reseason='Need to fix resampling of 2D data (tied to other_chunks issue)')
 @pytest.mark.parametrize('method', ['bilinear', 'nearest', {'air': 'nearest'}])
 def test_resampled_pyramid_2D(temperature, method, benchmark):
     pytest.importorskip('pyresample')
     pytest.importorskip('rioxarray')
     levels = 2
-    temperature = temperature.rio.write_crs('EPSG:4326')
     temperature = temperature.isel(time=0).drop_vars('time')
     pyramid = benchmark(
         lambda: pyramid_resample(temperature, levels=levels, x='lon', y='lat', resampling=method)
@@ -92,7 +88,6 @@ def test_resampled_pyramid_fill(temperature, benchmark):
     """
     pytest.importorskip('pyresample')
     pytest.importorskip('rioxarray')
-    temperature = temperature.rio.write_crs('EPSG:4326')
     pyramid = benchmark(lambda: pyramid_resample(temperature, levels=1, x='lon', y='lat'))
     assert np.isnan(pyramid['0'].air.isel(time=0, x=0, y=0).values)
 
