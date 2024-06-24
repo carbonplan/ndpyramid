@@ -53,7 +53,7 @@ def _da_resample(
     elif resampling == 'nearest':
         fun = block_nn_interpolator
     else:
-        raise ValueError(f"Unrecognized interpolation method {resampling} for gradient resampling.")
+        raise ValueError(f'Unrecognized interpolation method {resampling} for gradient resampling.')
     target_area_def = create_area_def(
         area_id=projection_model.name,
         projection=projection_model._crs,
@@ -64,7 +64,7 @@ def _da_resample(
         source_area_def = load_cf_area(da.to_dataset(name='var'), variable='var')[0]
     except ValueError as e:
         warnings.warn(
-            f"Automatic determination of source AreaDefinition from CF conventions failed with {e}."
+            f'Automatic determination of source AreaDefinition from CF conventions failed with {e}.'
             ' Falling back to AreaDefinition creation from coordinates.'
         )
         lx = da.x[0] - (da.x[1] - da.x[0]) / 2

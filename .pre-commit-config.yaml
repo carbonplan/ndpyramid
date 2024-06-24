@@ -43,27 +43,6 @@ repos:
     hooks:
       - id: prettier
 
-  - repo: https://github.com/kynan/nbstripout
-    rev: 0.7.1
-    hooks:
-      - id: nbstripout
-        args:
-          [
-            "--extra-keys",
-            "metadata.celltoolbar metadata.kernelspec",
-            "metadata.language_info.codemirror_mode.version",
-            "metadata.language_info.pygments_lexer",
-            "metadata.language_info.version",
-            "metadata.toc",
-            "metadata.notify_time",
-            "metadata.varInspector",
-            "cell.metadata.heading_collapsed",
-            "cell.metadata.hidden",
-            "cell.metadata.code_folding",
-            "cell.metadata.tags",
-            "cell.metadata.init_cell",
-          ]
-
   - repo: https://github.com/nbQA-dev/nbQA
     rev: 1.8.5
     hooks:
@@ -80,3 +59,7 @@ repos:
     rev: v1.9.0
     hooks:
       - id: mypy
+        additional_dependencies: [
+            # Type stubs
+            types-PyYAML,
+          ]

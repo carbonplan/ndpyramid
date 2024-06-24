@@ -1,0 +1,16 @@
+notebooks-examples:
+  - title: Pyramids from GeoTiff via rasterio
+    path: examples/geotiff.html
+    thumbnail: _static/thumbnails/geotiff.jpg
+  - title: Pyramids from Zarr via pyresample
+    path: examples/pyramid-resample.html
+    thumbnail: _static/thumbnails/resample.jpg
+  - title: Pyramids from Zarr via rasterio
+    path: examples/pyramid-reproject.html
+    thumbnail: _static/thumbnails/reproject.jpg
+  - title: Pyramids from Zarr via xesmf
+    path: examples/pyramid-regrid.html
+    thumbnail: _static/thumbnails/regrid.jpg
+  - title: Pyramids via custom resampling methods
+    path: examples/pyramid-create.html
+    thumbnail: _static/thumbnails/create.jpg
