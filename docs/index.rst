@@ -10,7 +10,7 @@ A small utility for generating ND array pyramids using Xarray and Zarr.
     :hidden:
     :caption: Getting Started
 
-    Quickstart <quick-start>
+    Installation <install>
 
 .. toctree::
     :maxdepth: 1
