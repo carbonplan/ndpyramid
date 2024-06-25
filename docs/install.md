@@ -1,6 +1,6 @@
 # Installation
 
-`ndpyramid` can be installed in three ways:
+Ndpyramid can be installed in three ways:
 
 Using the [conda](https://conda.io) package manager that comes with the Anaconda/Miniconda distribution:
 
@@ -22,12 +22,12 @@ cd ndpyramid
 python -m pip install -e .
 ```
 
-## optional dependencies
+## Optional dependencies
 
 Depending on your use case you can specify optional dependencies on install.
 
 ```
-python -m pip install "ndpyramid[xesmf]"     # Install optional dependencies for regridding
-
-
+python -m pip install "ndpyramid[xesmf]"     # Install optional dependencies for regridding with ESMF
+python -m pip install "ndpyramid[dask]"      # Install optional dependencies for resampling with pyresample and Dask
+python -m pip install "ndpyramid[complete]"  # Install all optional dependencies
 ```
