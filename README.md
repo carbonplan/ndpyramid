@@ -15,6 +15,7 @@ A small utility for generating ND array pyramids using Xarray and Zarr.
 ![PyPI](https://img.shields.io/pypi/v/ndpyramid)
 [![Conda Version](https://img.shields.io/conda/vn/conda-forge/ndpyramid.svg)](https://anaconda.org/conda-forge/ndpyramid)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Code coverage](https://codecov.io/gh/carbonplan/ndpyramid/branch/main/graph/badge.svg)](https://codecov.io/gh/carbonplan/ndpyramid)
 
 # installation
 
@@ -45,27 +46,22 @@ python -m pip install -e .
 Depending on your use case you can specify optional dependencies on install.
 
 ```
-python -m pip install "ndpyramid[xesmf]"     # Install optional dependencies for regridding
-
+python -m pip install "ndpyramid[xesmf]"     # Install optional dependencies for regridding with ESMF
+python -m pip install "ndpyramid[dask]"      # Install optional dependencies for resampling with pyresample and Dask
+python -m pip install "ndpyramid[complete]"  # Install all optional dependencies
 ```
 
 # usage
 
 Ndpyramid provides a set of utilities for creating pyramids with standardized metadata.
 The example below demonstrates the usage of the `pyramid_coarsen` and `pyramid_reproject`
-utilities. Check out [this](https://github.com/carbonplan/ndpyramid/blob/main/notebooks/demo.ipynb)
-Jupyter Notebook for a complete demonstration.
+utilities. Check out [the examples gallery](https://ndpyramid.readthedocs.io/en/latest/gallery.html)
+for more complete demonstrations.
 
 ```python
 import xarray as xr
 import rioxarray
 from ndpyramid import pyramid_coarsen, pyramid_reproject
-
-# load a sample xarray.Dataset
-ds = xr.tutorial.load_dataset('air_temperature')
-
-# make a coarsened pyramid
-pyramid = pyramid_coarsen(ds, factors=[16, 8, 4, 3, 2, 1], dims=['lat', 'lon'], boundary='trim')
 
 # make a reprojected (EPSG:3857) pyramid
 ds = ds.rio.write_crs('EPSG:4326')
@@ -75,7 +71,7 @@ pyramid = pyramid_reproject(ds, levels=2)
 pyramid.to_zarr('./path/to/write')
 ```
 
-See the docstrings for more details about input parameters and options.
+See the docstrings and [API documentation](https://ndpyramid.readthedocs.io/en/latest/api.html) for more details about input parameters and options.
 
 ## license
 
