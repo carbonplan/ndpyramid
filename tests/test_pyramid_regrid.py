@@ -16,7 +16,11 @@ def test_regridded_pyramid(temperature, regridder_apply_kws, benchmark):
     temperature = temperature.isel(time=slice(0, 5))
     pyramid = benchmark(
         lambda: pyramid_regrid(
-            temperature, levels=2, regridder_apply_kws=regridder_apply_kws, other_chunks={"time": 2}
+            temperature,
+            levels=2,
+            parallel_weights=False,
+            regridder_apply_kws=regridder_apply_kws,
+            other_chunks={"time": 2},
         )
     )
     verify_bounds(pyramid)
