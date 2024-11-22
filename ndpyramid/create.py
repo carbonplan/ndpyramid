@@ -1,6 +1,6 @@
 from __future__ import annotations  # noqa: F401
 
-from typing import Callable
+from collections.abc import Callable
 
 import xarray as xr
 

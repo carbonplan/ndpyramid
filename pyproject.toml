@@ -9,7 +9,7 @@ description = "A small utility for generating ND array pyramids using Xarray and
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "CarbonPlan", email = "tech@carbonplan.org" }]
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
@@ -17,8 +17,10 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+
     "Topic :: Scientific/Engineering",
 ]
 dynamic = ["version"]
@@ -85,13 +87,13 @@ write_to_template = '__version__ = "{version}"'
 
 [tool.black]
 line-length = 100
-target-version = ['py39']
+target-version = ['py312']
 skip-string-normalization = true
 
 
 [tool.ruff]
 line-length = 100
-target-version = "py39"
+target-version = "py312"
 builtins = ["ellipsis"]
 # Exclude a variety of commonly ignored directories.
 exclude = [
