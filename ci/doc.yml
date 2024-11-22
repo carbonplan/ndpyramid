@@ -12,7 +12,7 @@ dependencies:
   - sphinx-copybutton
   - sphinx-design
   - numpydoc
-  - numpy<2.0.0
+  - numpy
   - myst-parser
   - nbsphinx
   # Running examples

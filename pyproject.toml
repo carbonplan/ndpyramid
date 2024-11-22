@@ -33,7 +33,7 @@ dependencies = [
     "pydantic>=1.10",
     "pyproj",
     "rasterio",
-    "numpy<2.0.0"
+    "numpy",
 ]
 
 [project.optional-dependencies]
@@ -42,18 +42,10 @@ complete = [
     "mercantile",
     "cftime",
     "scipy",
-    "rioxarray"
+    "rioxarray",
 ]
-dask = [
-    "dask[complete]",
-    "pyresample",
-]
-jupyter = [
-    'notebook',
-    'ipytree>=0.2.2',
-    'ipywidgets>=8.0.0',
-    'matplotlib'
-]
+dask = ["dask[complete]", "pyresample"]
+jupyter = ['notebook', 'ipytree>=0.2.2', 'ipywidgets>=8.0.0', 'matplotlib']
 xesmf = ["xesmf>=0.8"]
 
 test = [
@@ -89,7 +81,6 @@ write_to_template = '__version__ = "{version}"'
 line-length = 100
 target-version = ['py310']
 skip-string-normalization = true
-
 
 
 [tool.ruff]
@@ -152,11 +143,7 @@ known-first-party = ["ndpyramid"]
 
 # Notebook ruff config
 [tool.ruff.lint.per-file-ignores]
-"*.ipynb" = [
-    "D100",
-    "E402",
-    "F401",
-]
+"*.ipynb" = ["D100", "E402", "F401"]
 
 
 [tool.pytest.ini_options]

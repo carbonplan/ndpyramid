@@ -10,7 +10,7 @@ dependencies:
   - mercantile
   - mpich
   - netcdf4
-  - numpy<2.0.0
+  - numpy
   - pip
   - pooch
   - pre-commit
