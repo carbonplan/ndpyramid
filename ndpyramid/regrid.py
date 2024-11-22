@@ -197,7 +197,6 @@ def pyramid_regrid(
     target_pyramid: xr.DataTree = None,
     levels: int = None,
     parallel_weights: bool = True,
-    method: str = 'bilinear',
     weights_pyramid: xr.DataTree = None,
     method: str = "bilinear",
     regridder_kws: dict = None,

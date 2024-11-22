@@ -20,8 +20,7 @@ def test_regridded_pyramid(temperature, regridder_apply_kws, benchmark):
             levels=2,
             parallel_weights=False,
             regridder_apply_kws=regridder_apply_kws,
-            other_chunks={'time': 2},
-            temperature, levels=2, regridder_apply_kws=regridder_apply_kws, other_chunks={"time": 2}
+            other_chunks={"time": 2},
         )
     )
     verify_bounds(pyramid)
