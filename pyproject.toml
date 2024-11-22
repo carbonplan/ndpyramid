@@ -54,7 +54,7 @@ jupyter = [
     'ipywidgets>=8.0.0',
     'matplotlib'
 ]
-xesmf = ["xesmf"]
+xesmf = ["xesmf>=0.8"]
 
 test = [
     "ndpyramid[complete]",
