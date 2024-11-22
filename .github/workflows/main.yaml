@@ -25,7 +25,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.9", "3.10", "3.11"]
+        python-version: ["3.10", "3.11", "3.12"]
     timeout-minutes: 20
     defaults:
       run:
@@ -35,7 +35,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Conda environment from environment.yml
-        uses: mamba-org/setup-micromamba@v1
+        uses: mamba-org/setup-micromamba@v2
         with:
           # environment-file is not assumed anymore
           environment-file: ci/environment.yml

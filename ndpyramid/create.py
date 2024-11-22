@@ -1,8 +1,7 @@
 from __future__ import annotations  # noqa: F401
 
-from typing import Callable
+from collections.abc import Callable
 
-import datatree as dt
 import xarray as xr
 
 from .utils import get_version, multiscales_template
@@ -14,7 +13,7 @@ def pyramid_create(
     factors: list[int],
     dims: list[str],
     func: Callable,
-    type_label: str = 'reduce',
+    type_label: str = "reduce",
     method_label: str | None = None,
     **kwargs,
 ):
@@ -44,14 +43,14 @@ def pyramid_create(
     """
     # multiscales spec
     save_kwargs = locals()
-    del save_kwargs['ds']
-    del save_kwargs['func']
-    del save_kwargs['type_label']
-    del save_kwargs['method_label']
+    del save_kwargs["ds"]
+    del save_kwargs["func"]
+    del save_kwargs["type_label"]
+    del save_kwargs["method_label"]
 
     attrs = {
-        'multiscales': multiscales_template(
-            datasets=[{'path': str(i)} for i in range(len(factors))],
+        "multiscales": multiscales_template(
+            datasets=[{"path": str(i)} for i in range(len(factors))],
             type=type_label,
             method=method_label or func.__name__,
             version=get_version(),
@@ -66,5 +65,5 @@ def pyramid_create(
     for key, factor in enumerate(factors):
         plevels[str(key)] = func(ds, factor, dims, **kwargs)
 
-    plevels['/'] = xr.Dataset(attrs=attrs)
-    return dt.DataTree.from_dict(plevels)
+    plevels["/"] = xr.Dataset(attrs=attrs)
+    return xr.DataTree.from_dict(plevels)
