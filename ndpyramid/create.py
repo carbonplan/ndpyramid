@@ -2,7 +2,6 @@ from __future__ import annotations  # noqa: F401
 
 from typing import Callable
 
-import datatree as dt
 import xarray as xr
 
 from .utils import get_version, multiscales_template
@@ -67,4 +66,4 @@ def pyramid_create(
         plevels[str(key)] = func(ds, factor, dims, **kwargs)
 
     plevels['/'] = xr.Dataset(attrs=attrs)
-    return dt.DataTree.from_dict(plevels)
+    return xr.DataTree.from_dict(plevels)

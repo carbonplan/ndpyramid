@@ -3,7 +3,6 @@ from __future__ import annotations  # noqa: F401
 import itertools
 import typing
 
-import datatree as dt
 import numpy as np
 import xarray as xr
 
@@ -123,7 +122,7 @@ def make_grid_pyramid(
     levels: int = 6,
     projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
     pixels_per_tile: int = 128,
-) -> dt.DataTree:
+) -> xr.DataTree:
     """helper function to create a grid pyramid for use with xesmf
 
     Parameters
@@ -133,7 +132,7 @@ def make_grid_pyramid(
 
     Returns
     -------
-    pyramid : dt.DataTree
+    pyramid : xr.DataTree
         Multiscale grid definition
     """
     plevels = {
@@ -142,7 +141,7 @@ def make_grid_pyramid(
         ).chunk(-1)
         for level in range(levels)
     }
-    return dt.DataTree.from_dict(plevels)
+    return xr.DataTree.from_dict(plevels)
 
 
 def generate_weights_pyramid(
@@ -151,7 +150,7 @@ def generate_weights_pyramid(
     method: str = 'bilinear',
     regridder_kws: dict = None,
     projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
-) -> dt.DataTree:
+) -> xr.DataTree:
     """helper function to generate weights for a multiscale regridder
 
     Parameters
@@ -169,7 +168,7 @@ def generate_weights_pyramid(
 
     Returns
     -------
-    weights : dt.DataTree
+    weights : xr.DataTree
         Multiscale weights
     """
     import xesmf as xe
@@ -187,21 +186,21 @@ def generate_weights_pyramid(
 
     root = xr.Dataset(attrs={'levels': levels, 'regrid_method': method})
     plevels['/'] = root
-    return dt.DataTree.from_dict(plevels)
+    return xr.DataTree.from_dict(plevels)
 
 
 def pyramid_regrid(
     ds: xr.Dataset,
     projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
-    target_pyramid: dt.DataTree = None,
+    target_pyramid: xr.DataTree = None,
     levels: int = None,
-    weights_pyramid: dt.DataTree = None,
+    weights_pyramid: xr.DataTree = None,
     method: str = 'bilinear',
     regridder_kws: dict = None,
     regridder_apply_kws: dict = None,
     other_chunks: dict = None,
     pixels_per_tile: int = 128,
-) -> dt.DataTree:
+) -> xr.DataTree:
     """Make a pyramid using xesmf's regridders
 
     Parameters
@@ -210,11 +209,11 @@ def pyramid_regrid(
         Input dataset
     projection : str, optional
         Projection to use for the grid, by default 'web-mercator'
-    target_pyramid : dt.DataTree, optional
+    target_pyramid : xr.DataTree, optional
         Target grids, if not provided, they will be generated, by default None
     levels : int, optional
         Number of levels in pyramid, by default None
-    weights_pyramid : dt.DataTree, optional
+    weights_pyramid : xr.DataTree, optional
        pyramid containing pregenerated weights
     method : str, optional
         Regridding method. See :py:class:`~xesmf.Regridder` for valid options, by default 'bilinear'
@@ -230,7 +229,7 @@ def pyramid_regrid(
 
     Returns
     -------
-    pyramid : dt.DataTree
+    pyramid : xr.DataTree
         Multiscale data pyramid
     """
     import xesmf as xe
@@ -312,7 +311,7 @@ def pyramid_regrid(
 
     root = xr.Dataset(attrs=attrs)
     plevels['/'] = root
-    pyramid = dt.DataTree.from_dict(plevels)
+    pyramid = xr.DataTree.from_dict(plevels)
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid,

@@ -1,6 +1,5 @@
 from __future__ import annotations  # noqa: F401
 
-import datatree as dt
 import xarray as xr
 
 from .create import pyramid_create
@@ -8,7 +7,7 @@ from .create import pyramid_create
 
 def pyramid_coarsen(
     ds: xr.Dataset, *, factors: list[int], dims: list[str], **kwargs
-) -> dt.DataTree:
+) -> xr.DataTree:
     """Create a multiscale pyramid via coarsening of a dataset by given factors
 
     Parameters

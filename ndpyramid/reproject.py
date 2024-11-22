@@ -2,7 +2,6 @@ from __future__ import annotations  # noqa: F401
 
 from collections import defaultdict
 
-import datatree as dt
 import numpy as np
 import xarray as xr
 from rasterio.warp import Resampling
@@ -137,7 +136,7 @@ def pyramid_reproject(
     resampling: str | dict = 'average',
     extra_dim: str = None,
     clear_attrs: bool = False,
-) -> dt.DataTree:
+) -> xr.DataTree:
     """Create a multiscale pyramid of a dataset via reprojection.
 
     Parameters
@@ -163,7 +162,7 @@ def pyramid_reproject(
 
     Returns
     -------
-    dt.DataTree
+    xr.DataTree
         The multiscale pyramid.
 
     """
@@ -208,7 +207,7 @@ def pyramid_reproject(
 
     # create the final multiscale pyramid
     plevels['/'] = xr.Dataset(attrs=attrs)
-    pyramid = dt.DataTree.from_dict(plevels)
+    pyramid = xr.DataTree.from_dict(plevels)
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid,

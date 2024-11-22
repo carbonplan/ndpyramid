@@ -26,7 +26,7 @@ dynamic = ["version"]
 
 dependencies = [
     "cf_xarray>=0.8.0",
-    "xarray-datatree>=0.0.11",
+    "xarray[complete]>=2024.10.0",
     "zarr",
     "pydantic>=1.10",
     "pyproj",
@@ -37,7 +37,6 @@ dependencies = [
 [project.optional-dependencies]
 complete = [
     "ndpyramid[dask,jupyter,xesmf]",
-    "xarray[complete]",
     "mercantile",
     "cftime",
     "scipy",

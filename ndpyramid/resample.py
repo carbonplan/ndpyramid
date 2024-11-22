@@ -4,7 +4,6 @@ import typing
 import warnings
 from collections import defaultdict
 
-import datatree as dt
 import numpy as np
 import xarray as xr
 from pyproj.crs import CRS
@@ -209,7 +208,7 @@ def pyramid_resample(
     other_chunks: dict = None,
     resampling: ResamplingOptions | dict = 'bilinear',
     clear_attrs: bool = False,
-) -> dt.DataTree:
+) -> xr.DataTree:
     """Create a multiscale pyramid of a dataset via resampling.
 
     Parameters
@@ -237,7 +236,7 @@ def pyramid_resample(
 
     Returns
     -------
-    dt.DataTree
+    xr.DataTree
         The multiscale pyramid.
 
     Warnings
@@ -280,7 +279,7 @@ def pyramid_resample(
 
     # create the final multiscale pyramid
     plevels['/'] = xr.Dataset(attrs=attrs)
-    pyramid = dt.DataTree.from_dict(plevels)
+    pyramid = xr.DataTree.from_dict(plevels)
 
     projection_model = Projection(name=projection)
 

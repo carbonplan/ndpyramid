@@ -3,7 +3,6 @@ from __future__ import annotations  # noqa: F401
 import contextlib
 
 import cf_xarray  # noqa: F401
-import datatree as dt
 import numpy as np
 import numpy.typing as npt
 import xarray as xr
@@ -140,18 +139,18 @@ def set_zarr_encoding(
 
 
 def add_metadata_and_zarr_encoding(
-    pyramid: dt.DataTree,
+    pyramid: xr.DataTree,
     *,
     levels: int,
     other_chunks: dict = None,
     pixels_per_tile: int = 128,
     projection: Projection = None,
-) -> dt.DataTree:
+) -> xr.DataTree:
     '''Postprocess data pyramid. Adds multiscales metadata and sets Zarr encoding
 
     Parameters
     ----------
-    pyramid : dt.DataTree
+    pyramid : xr.DataTree
         Input data pyramid
     levels : int
         Number of levels in pyramid
@@ -164,7 +163,7 @@ def add_metadata_and_zarr_encoding(
 
     Returns
     -------
-    dt.DataTree
+    xr.DataTree
         Updated data pyramid with metadata / encoding set
 
     Notes
