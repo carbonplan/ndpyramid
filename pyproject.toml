@@ -9,7 +9,7 @@ description = "A small utility for generating ND array pyramids using Xarray and
 readme = "README.md"
 license = { text = "MIT" }
 authors = [{ name = "CarbonPlan", email = "tech@carbonplan.org" }]
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 4 - Beta",
     "License :: OSI Approved :: MIT License",
@@ -17,8 +17,10 @@ classifiers = [
     "Intended Audience :: Science/Research",
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+
     "Topic :: Scientific/Engineering",
 ]
 dynamic = ["version"]
@@ -26,7 +28,7 @@ dynamic = ["version"]
 
 dependencies = [
     "cf_xarray>=0.8.0",
-    "xarray-datatree>=0.0.11",
+    "xarray[complete]>=2024.10.0",
     "zarr",
     "pydantic>=1.10",
     "pyproj",
@@ -37,7 +39,6 @@ dependencies = [
 [project.optional-dependencies]
 complete = [
     "ndpyramid[dask,jupyter,xesmf]",
-    "xarray[complete]",
     "mercantile",
     "cftime",
     "scipy",
@@ -53,7 +54,7 @@ jupyter = [
     'ipywidgets>=8.0.0',
     'matplotlib'
 ]
-xesmf = ["xesmf"]
+xesmf = ["xesmf>=0.8"]
 
 test = [
     "ndpyramid[complete]",
@@ -86,13 +87,15 @@ write_to_template = '__version__ = "{version}"'
 
 [tool.black]
 line-length = 100
-target-version = ['py39']
+target-version = ['py310']
 skip-string-normalization = true
 
 
+
 [tool.ruff]
+
 line-length = 100
-target-version = "py39"
+target-version = "py310"
 builtins = ["ellipsis"]
 # Exclude a variety of commonly ignored directories.
 exclude = [
@@ -118,7 +121,6 @@ exclude = [
 ]
 
 [tool.ruff.lint]
-per-file-ignores = {}
 # E402: module level import not at top of file
 # E501: line too long - let black worry about that
 # E731: do not assign a lambda expression, use a def
@@ -128,6 +130,7 @@ select = [
     "F",
     # Pycodestyle
     "E",
+    "Q",
     "W",
     # isort
     "I",
@@ -135,12 +138,26 @@ select = [
     "UP",
 ]
 
+[tool.ruff.lint.flake8-quotes]
+inline-quotes = "double"
+multiline-quotes = "double"
+docstring-quotes = "double"
 
 [tool.ruff.lint.mccabe]
 max-complexity = 18
 
 [tool.ruff.lint.isort]
 known-first-party = ["ndpyramid"]
+
+
+# Notebook ruff config
+[tool.ruff.per-file-ignores]
+"*.ipynb" = [
+    "D100",
+    "E402",
+    "F401",
+]
+
 
 [tool.pytest.ini_options]
 console_output_style = "count"

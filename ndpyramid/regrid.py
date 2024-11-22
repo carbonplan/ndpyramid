@@ -3,7 +3,6 @@ from __future__ import annotations  # noqa: F401
 import itertools
 import typing
 
-import datatree as dt
 import numpy as np
 import xarray as xr
 
@@ -13,15 +12,15 @@ from .utils import add_metadata_and_zarr_encoding, get_version, multiscales_temp
 
 def xesmf_weights_to_xarray(regridder) -> xr.Dataset:
     w = regridder.weights.data
-    dim = 'n_s'
+    dim = "n_s"
     ds = xr.Dataset(
         {
-            'S': (dim, w.data),
-            'col': (dim, w.coords[1, :] + 1),
-            'row': (dim, w.coords[0, :] + 1),
+            "S": (dim, w.data),
+            "col": (dim, w.coords[1, :] + 1),
+            "row": (dim, w.coords[0, :] + 1),
         }
     )
-    ds.attrs = {'n_in': regridder.n_in, 'n_out': regridder.n_out}
+    ds.attrs = {"n_in": regridder.n_in, "n_out": regridder.n_out}
     return ds
 
 
@@ -30,20 +29,20 @@ def _reconstruct_xesmf_weights(ds_w):
     import sparse
     import xarray as xr
 
-    col = ds_w['col'].values - 1
-    row = ds_w['row'].values - 1
-    s = ds_w['S'].values
-    n_out, n_in = ds_w.attrs['n_out'], ds_w.attrs['n_in']
+    col = ds_w["col"].values - 1
+    row = ds_w["row"].values - 1
+    s = ds_w["S"].values
+    n_out, n_in = ds_w.attrs["n_out"], ds_w.attrs["n_in"]
     crds = np.stack([row, col])
     return xr.DataArray(
-        sparse.COO(crds, s, (n_out, n_in)), dims=('out_dim', 'in_dim'), name='weights'
+        sparse.COO(crds, s, (n_out, n_in)), dims=("out_dim", "in_dim"), name="weights"
     )
 
 
 def make_grid_ds(
     level: int,
     pixels_per_tile: int = 128,
-    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    projection: typing.Literal["web-mercator", "equidistant-cylindrical"] = "web-mercator",
 ) -> xr.Dataset:
     """Make a dataset representing a target grid
 
@@ -66,19 +65,19 @@ def make_grid_ds(
         - "lon": longitude coordinate (grid cell center)
         - "lat_b": latitude bounds for grid cell
         - "lon_b": longitude bounds for grid cell
-    """
 
+    """
     projection_model = Projection(name=projection)
 
     dim = (2**level) * pixels_per_tile
 
     transform = projection_model.transform(dim=dim)
 
-    if projection_model.name == 'equidistant-cylindrical':
-        title = 'Equidistant Cylindrical Grid'
+    if projection_model.name == "equidistant-cylindrical":
+        title = "Equidistant Cylindrical Grid"
 
-    elif projection_model.name == 'web-mercator':
-        title = 'Web Mercator Grid'
+    elif projection_model.name == "web-mercator":
+        title = "Web Mercator Grid"
 
     p = projection_model._proj
 
@@ -108,23 +107,23 @@ def make_grid_ds(
 
     return xr.Dataset(
         {
-            'x': xr.DataArray(xs[0, :], dims=['x']),
-            'y': xr.DataArray(ys[:, 0], dims=['y']),
-            'lat': xr.DataArray(lat, dims=['y', 'x']),
-            'lon': xr.DataArray(lon, dims=['y', 'x']),
-            'lat_b': xr.DataArray(lat_b, dims=['y_b', 'x_b']),
-            'lon_b': xr.DataArray(lon_b, dims=['y_b', 'x_b']),
+            "x": xr.DataArray(xs[0, :], dims=["x"]),
+            "y": xr.DataArray(ys[:, 0], dims=["y"]),
+            "lat": xr.DataArray(lat, dims=["y", "x"]),
+            "lon": xr.DataArray(lon, dims=["y", "x"]),
+            "lat_b": xr.DataArray(lat_b, dims=["y_b", "x_b"]),
+            "lon_b": xr.DataArray(lon_b, dims=["y_b", "x_b"]),
         },
-        attrs=dict(title=title, Conventions='CF-1.8'),
+        attrs=dict(title=title, Conventions="CF-1.8"),
     )
 
 
 def make_grid_pyramid(
     levels: int = 6,
-    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
+    projection: typing.Literal["web-mercator", "equidistant-cylindrical"] = "web-mercator",
     pixels_per_tile: int = 128,
-) -> dt.DataTree:
-    """helper function to create a grid pyramid for use with xesmf
+) -> xr.DataTree:
+    """Helper function to create a grid pyramid for use with xesmf
 
     Parameters
     ----------
@@ -133,8 +132,9 @@ def make_grid_pyramid(
 
     Returns
     -------
-    pyramid : dt.DataTree
+    pyramid : xr.DataTree
         Multiscale grid definition
+
     """
     plevels = {
         str(level): make_grid_ds(
@@ -142,17 +142,17 @@ def make_grid_pyramid(
         ).chunk(-1)
         for level in range(levels)
     }
-    return dt.DataTree.from_dict(plevels)
+    return xr.DataTree.from_dict(plevels)
 
 
 def generate_weights_pyramid(
     ds_in: xr.Dataset,
     levels: int,
-    method: str = 'bilinear',
+    method: str = "bilinear",
     regridder_kws: dict = None,
-    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
-) -> dt.DataTree:
-    """helper function to generate weights for a multiscale regridder
+    projection: typing.Literal["web-mercator", "equidistant-cylindrical"] = "web-mercator",
+) -> xr.DataTree:
+    """Helper function to generate weights for a multiscale regridder
 
     Parameters
     ----------
@@ -169,13 +169,14 @@ def generate_weights_pyramid(
 
     Returns
     -------
-    weights : dt.DataTree
+    weights : xr.DataTree
         Multiscale weights
+
     """
     import xesmf as xe
 
     regridder_kws = {} if regridder_kws is None else regridder_kws
-    regridder_kws = {'periodic': True, **regridder_kws}
+    regridder_kws = {"periodic": True, **regridder_kws}
 
     plevels = {}
     for level in range(levels):
@@ -185,23 +186,23 @@ def generate_weights_pyramid(
 
         plevels[str(level)] = ds
 
-    root = xr.Dataset(attrs={'levels': levels, 'regrid_method': method})
-    plevels['/'] = root
-    return dt.DataTree.from_dict(plevels)
+    root = xr.Dataset(attrs={"levels": levels, "regrid_method": method})
+    plevels["/"] = root
+    return xr.DataTree.from_dict(plevels)
 
 
 def pyramid_regrid(
     ds: xr.Dataset,
-    projection: typing.Literal['web-mercator', 'equidistant-cylindrical'] = 'web-mercator',
-    target_pyramid: dt.DataTree = None,
+    projection: typing.Literal["web-mercator", "equidistant-cylindrical"] = "web-mercator",
+    target_pyramid: xr.DataTree = None,
     levels: int = None,
-    weights_pyramid: dt.DataTree = None,
-    method: str = 'bilinear',
+    weights_pyramid: xr.DataTree = None,
+    method: str = "bilinear",
     regridder_kws: dict = None,
     regridder_apply_kws: dict = None,
     other_chunks: dict = None,
     pixels_per_tile: int = 128,
-) -> dt.DataTree:
+) -> xr.DataTree:
     """Make a pyramid using xesmf's regridders
 
     Parameters
@@ -210,11 +211,11 @@ def pyramid_regrid(
         Input dataset
     projection : str, optional
         Projection to use for the grid, by default 'web-mercator'
-    target_pyramid : dt.DataTree, optional
+    target_pyramid : xr.DataTree, optional
         Target grids, if not provided, they will be generated, by default None
     levels : int, optional
         Number of levels in pyramid, by default None
-    weights_pyramid : dt.DataTree, optional
+    weights_pyramid : xr.DataTree, optional
        pyramid containing pregenerated weights
     method : str, optional
         Regridding method. See :py:class:`~xesmf.Regridder` for valid options, by default 'bilinear'
@@ -230,8 +231,9 @@ def pyramid_regrid(
 
     Returns
     -------
-    pyramid : dt.DataTree
+    pyramid : xr.DataTree
         Multiscale data pyramid
+
     """
     import xesmf as xe
 
@@ -241,38 +243,38 @@ def pyramid_regrid(
                 levels, projection=projection, pixels_per_tile=pixels_per_tile
             )
         else:
-            raise ValueError('must either provide a target_pyramid or number of levels')
+            raise ValueError("must either provide a target_pyramid or number of levels")
     if levels is None:
         levels = len(target_pyramid.keys())  # TODO: get levels from the pyramid metadata
 
     regridder_kws = {} if regridder_kws is None else regridder_kws
-    regridder_kws = {'periodic': True, **regridder_kws}
+    regridder_kws = {"periodic": True, **regridder_kws}
 
     # multiscales spec
     projection_model = Projection(name=projection)
     save_kwargs = {
-        'levels': levels,
-        'pixels_per_tile': pixels_per_tile,
-        'projection': projection,
-        'other_chunks': other_chunks,
-        'method': method,
-        'regridder_kws': regridder_kws,
-        'regridder_apply_kws': regridder_apply_kws,
+        "levels": levels,
+        "pixels_per_tile": pixels_per_tile,
+        "projection": projection,
+        "other_chunks": other_chunks,
+        "method": method,
+        "regridder_kws": regridder_kws,
+        "regridder_apply_kws": regridder_apply_kws,
     }
 
     attrs = {
-        'multiscales': multiscales_template(
+        "multiscales": multiscales_template(
             datasets=[
-                {'path': str(i), 'level': i, 'crs': projection_model._crs} for i in range(levels)
+                {"path": str(i), "level": i, "crs": projection_model._crs} for i in range(levels)
             ],
-            type='reduce',
-            method='pyramid_regrid',
+            type="reduce",
+            method="pyramid_regrid",
             version=get_version(),
             kwargs=save_kwargs,
         )
     }
-    save_kwargs.pop('levels')
-    save_kwargs.pop('other_chunks')
+    save_kwargs.pop("levels")
+    save_kwargs.pop("other_chunks")
 
     # set up pyramid
 
@@ -297,22 +299,22 @@ def pyramid_regrid(
         # regrid
         if regridder_apply_kws is None:
             regridder_apply_kws = {}
-        regridder_apply_kws = {**{'keep_attrs': True}, **regridder_apply_kws}
+        regridder_apply_kws = {**{"keep_attrs": True}, **regridder_apply_kws}
         plevels[str(level)] = regridder(ds, **regridder_apply_kws)
         level_attrs = {
-            'multiscales': multiscales_template(
-                datasets=[{'path': '.', 'level': level, 'crs': projection_model._crs}],
-                type='reduce',
-                method='pyramid_regrid',
+            "multiscales": multiscales_template(
+                datasets=[{"path": ".", "level": level, "crs": projection_model._crs}],
+                type="reduce",
+                method="pyramid_regrid",
                 version=get_version(),
                 kwargs=save_kwargs,
             )
         }
-        plevels[str(level)].attrs['multiscales'] = level_attrs['multiscales']
+        plevels[str(level)].attrs["multiscales"] = level_attrs["multiscales"]
 
     root = xr.Dataset(attrs=attrs)
-    plevels['/'] = root
-    pyramid = dt.DataTree.from_dict(plevels)
+    plevels["/"] = root
+    pyramid = xr.DataTree.from_dict(plevels)
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid,

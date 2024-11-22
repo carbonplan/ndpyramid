@@ -4,7 +4,7 @@ channels:
   - nodefaults
 dependencies:
   # Building docs
-  - python=3.10
+  - python=3.12
   - pre-commit
   - pip
   - sphinx>=5.0
@@ -30,8 +30,7 @@ dependencies:
   - s3fs
   - scipy
   - sparse>=0.13.0
-  - xarray
-  - xarray-datatree>=0.0.11
+  - xarray>=2024.10.0
   - xesmf
   - zarr
   - cf_xarray>=0.8.0

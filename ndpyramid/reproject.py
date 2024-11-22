@@ -2,7 +2,6 @@ from __future__ import annotations  # noqa: F401
 
 from collections import defaultdict
 
-import datatree as dt
 import numpy as np
 import xarray as xr
 from rasterio.warp import Resampling
@@ -17,8 +16,8 @@ from .utils import (
 
 
 def _da_reproject(da: xr.DataArray, *, dim: int, crs: str, resampling: str, transform):
-    if da.encoding.get('_FillValue') is None and np.issubdtype(da.dtype, np.floating):
-        da.encoding['_FillValue'] = np.nan
+    if da.encoding.get("_FillValue") is None and np.issubdtype(da.dtype, np.floating):
+        da.encoding["_FillValue"] = np.nan
     return da.rio.reproject(
         crs,
         resampling=resampling,
@@ -30,10 +29,10 @@ def _da_reproject(da: xr.DataArray, *, dim: int, crs: str, resampling: str, tran
 def level_reproject(
     ds: xr.Dataset,
     *,
-    projection: ProjectionOptions = 'web-mercator',
+    projection: ProjectionOptions = "web-mercator",
     level: int,
     pixels_per_tile: int = 128,
-    resampling: str | dict = 'average',
+    resampling: str | dict = "average",
     extra_dim: str = None,
     clear_attrs: bool = False,
 ) -> xr.Dataset:
@@ -64,24 +63,25 @@ def level_reproject(
     Warning
     -------
     Pyramid generation by level is experimental and subject to change.
+
     """
     projection_model = Projection(name=projection)
     dim = 2**level * pixels_per_tile
     dst_transform = projection_model.transform(dim=dim)
     save_kwargs = {
-        'level': level,
-        'pixels_per_tile': pixels_per_tile,
-        'projection': projection,
-        'resampling': resampling,
-        'extra_dim': extra_dim,
-        'clear_attrs': clear_attrs,
+        "level": level,
+        "pixels_per_tile": pixels_per_tile,
+        "projection": projection,
+        "resampling": resampling,
+        "extra_dim": extra_dim,
+        "clear_attrs": clear_attrs,
     }
 
     attrs = {
-        'multiscales': multiscales_template(
-            datasets=[{'path': '.', 'level': level, 'crs': projection_model._crs}],
-            type='reduce',
-            method='pyramid_reproject',
+        "multiscales": multiscales_template(
+            datasets=[{"path": ".", "level": level, "crs": projection_model._crs}],
+            type="reduce",
+            method="pyramid_reproject",
             version=get_version(),
             kwargs=save_kwargs,
         )
@@ -123,21 +123,21 @@ def level_reproject(
                 resampling=Resampling[resampling_dict[k]],
                 transform=dst_transform,
             )
-    ds_level.attrs['multiscales'] = attrs['multiscales']
+    ds_level.attrs["multiscales"] = attrs["multiscales"]
     return ds_level
 
 
 def pyramid_reproject(
     ds: xr.Dataset,
     *,
-    projection: ProjectionOptions = 'web-mercator',
+    projection: ProjectionOptions = "web-mercator",
     levels: int = None,
     pixels_per_tile: int = 128,
     other_chunks: dict = None,
-    resampling: str | dict = 'average',
+    resampling: str | dict = "average",
     extra_dim: str = None,
     clear_attrs: bool = False,
-) -> dt.DataTree:
+) -> xr.DataTree:
     """Create a multiscale pyramid of a dataset via reprojection.
 
     Parameters
@@ -163,7 +163,7 @@ def pyramid_reproject(
 
     Returns
     -------
-    dt.DataTree
+    xr.DataTree
         The multiscale pyramid.
 
     """
@@ -171,21 +171,21 @@ def pyramid_reproject(
         levels = get_levels(ds)
     projection_model = Projection(name=projection)
     save_kwargs = {
-        'levels': levels,
-        'pixels_per_tile': pixels_per_tile,
-        'projection': projection,
-        'other_chunks': other_chunks,
-        'resampling': resampling,
-        'extra_dim': extra_dim,
-        'clear_attrs': clear_attrs,
+        "levels": levels,
+        "pixels_per_tile": pixels_per_tile,
+        "projection": projection,
+        "other_chunks": other_chunks,
+        "resampling": resampling,
+        "extra_dim": extra_dim,
+        "clear_attrs": clear_attrs,
     }
     attrs = {
-        'multiscales': multiscales_template(
+        "multiscales": multiscales_template(
             datasets=[
-                {'path': str(i), 'level': i, 'crs': projection_model._crs} for i in range(levels)
+                {"path": str(i), "level": i, "crs": projection_model._crs} for i in range(levels)
             ],
-            type='reduce',
-            method='pyramid_reproject',
+            type="reduce",
+            method="pyramid_reproject",
             version=get_version(),
             kwargs=save_kwargs,
         )
@@ -207,8 +207,8 @@ def pyramid_reproject(
         )
 
     # create the final multiscale pyramid
-    plevels['/'] = xr.Dataset(attrs=attrs)
-    pyramid = dt.DataTree.from_dict(plevels)
+    plevels["/"] = xr.Dataset(attrs=attrs)
+    pyramid = xr.DataTree.from_dict(plevels)
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid,
