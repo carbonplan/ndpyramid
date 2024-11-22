@@ -20,6 +20,7 @@ def pyramid_coarsen(
         The dimensions to coarsen.
     kwargs : dict
         Additional keyword arguments to pass to xarray.Dataset.coarsen.
+
     """
 
     def coarsen(ds: xr.Dataset, factor: int, dims: list[str], **kwargs):
@@ -32,7 +33,7 @@ def pyramid_coarsen(
         factors=factors,
         dims=dims,
         func=coarsen,
-        method_label='pyramid_coarsen',
-        type_label='reduce',
+        method_label="pyramid_coarsen",
+        type_label="reduce",
         **kwargs,
     )
