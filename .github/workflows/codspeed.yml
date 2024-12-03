@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3.0.4
+        uses: conda-incubator/setup-miniconda@v3.1.0
         with:
           auto-activate-base: true
           activate-environment: "" # base environment
@@ -41,7 +41,7 @@ jobs:
           python -m pip install -e . --no-deps
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v3.0.1
+        uses: CodSpeedHQ/action@v3.2.0
         with:
           run: |
             conda list
