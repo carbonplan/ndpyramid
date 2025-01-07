@@ -1,155 +1,149 @@
 
 [build-system]
-requires = ["setuptools>=64", "setuptools-scm[toml]>=6.2", "wheel"]
-build-backend = "setuptools.build_meta"
+    build-backend = "setuptools.build_meta"
+    requires      = ["setuptools-scm[toml]>=6.2", "setuptools>=64", "wheel"]
 
 [project]
-name = "ndpyramid"
-description = "A small utility for generating ND array pyramids using Xarray and Zarr"
-readme = "README.md"
-license = { text = "MIT" }
-authors = [{ name = "CarbonPlan", email = "tech@carbonplan.org" }]
-requires-python = ">=3.10"
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: MIT License",
-    "Operating System :: OS Independent",
-    "Intended Audience :: Science/Research",
-    "Programming Language :: Python",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
+    authors = [{ name = "CarbonPlan", email = "tech@carbonplan.org" }]
+    classifiers = [
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: MIT License",
+        "Operating System :: OS Independent",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python",
 
-    "Topic :: Scientific/Engineering",
-]
-dynamic = ["version"]
+        "Topic :: Scientific/Engineering",
+    ]
+    description = "A small utility for generating ND array pyramids using Xarray and Zarr"
+    dynamic = ["version"]
+    license = { text = "MIT" }
+    name = "ndpyramid"
+    readme = "README.md"
+    requires-python = ">=3.10"
 
-
-dependencies = [
-    "cf_xarray>=0.8.0",
-    "xarray[complete]>=2024.10.0",
-    "zarr",
-    "pydantic>=1.10",
-    "pyproj",
-    "rasterio",
-    "numpy",
-]
+    dependencies = [
+        "cf_xarray>=0.8.0",
+        "numpy",
+        "pydantic>=1.10",
+        "pyproj",
+        "rasterio",
+        "xarray[complete]>=2024.10.0",
+        "zarr",
+    ]
 
 [project.optional-dependencies]
-complete = [
-    "ndpyramid[dask,jupyter,xesmf]",
-    "mercantile",
-    "cftime",
-    "scipy",
-    "rioxarray",
-]
-dask = ["dask[complete]", "pyresample"]
-jupyter = ['notebook', 'ipytree>=0.2.2', 'ipywidgets>=8.0.0', 'matplotlib']
-xesmf = ["xesmf>=0.8"]
+    complete = [
+        "cftime",
+        "mercantile",
+        "ndpyramid[dask,jupyter,xesmf]",
+        "rioxarray",
+        "scipy",
+    ]
+    dask = ["dask[complete]", "pyresample"]
+    jupyter = ['ipytree>=0.2.2', 'ipywidgets>=8.0.0', 'matplotlib', 'notebook']
+    xesmf = ["xesmf>=0.8"]
 
-test = [
-    "ndpyramid[complete]",
-    "pre-commit",
-    "pytest-benchmark",
-    "pytest-codspeed",
-    "pytest-cov",
-    "pytest-mypy",
-    "pytest",
-]
-
+    test = [
+        "ndpyramid[complete]",
+        "pre-commit",
+        "pytest",
+        "pytest-benchmark",
+        "pytest-codspeed",
+        "pytest-cov",
+        "pytest-mypy",
+    ]
 
 [project.urls]
-repository = "https://github.com/carbonplan/ndpyramid"
+    repository = "https://github.com/carbonplan/ndpyramid"
 
 [tool.setuptools.packages.find]
-include = ["ndpyramid*"]
+    include = ["ndpyramid*"]
 
 [tool.setuptools_scm]
-version_scheme = "post-release"
-local_scheme = "node-and-date"
-fallback_version = "999"
-write_to = "ndpyramid/_version.py"
-write_to_template = '__version__ = "{version}"'
+    fallback_version  = "999"
+    local_scheme      = "node-and-date"
+    version_scheme    = "post-release"
+    write_to          = "ndpyramid/_version.py"
+    write_to_template = '__version__ = "{version}"'
 
-
-# [tool.setuptools.dynamic]
-# version = { attr = "ndpyramid.__version__" }
-
+    # [tool.setuptools.dynamic]
+    # version = { attr = "ndpyramid.__version__" }
 
 [tool.black]
-line-length = 100
-target-version = ['py310']
-skip-string-normalization = true
-
+    line-length               = 100
+    skip-string-normalization = true
+    target-version            = ['py310']
 
 [tool.ruff]
 
-line-length = 100
-target-version = "py310"
-builtins = ["ellipsis"]
-# Exclude a variety of commonly ignored directories.
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-]
+    builtins       = ["ellipsis"]
+    extend-include = ["*.ipynb"]
+    line-length    = 100
+    target-version = "py310"
+    # Exclude a variety of commonly ignored directories.
+    exclude = [
+        ".bzr",
+        ".direnv",
+        ".eggs",
+        ".git",
+        ".hg",
+        ".mypy_cache",
+        ".nox",
+        ".pants.d",
+        ".ruff_cache",
+        ".svn",
+        ".tox",
+        ".venv",
+        "__pypackages__",
+        "_build",
+        "buck-out",
+        "build",
+        "dist",
+        "node_modules",
+        "venv",
+    ]
 
 [tool.ruff.lint]
-# E402: module level import not at top of file
-# E501: line too long - let black worry about that
-# E731: do not assign a lambda expression, use a def
-ignore = ["E402", "E501", "E731"]
-select = [
-    # Pyflakes
-    "F",
-    # Pycodestyle
-    "E",
-    "Q",
-    "W",
-    # isort
-    "I",
-    # Pyupgrade
-    "UP",
-]
+    # E402: module level import not at top of file
+    # E501: line too long - let black worry about that
+    # E731: do not assign a lambda expression, use a def
+    ignore = ["E402", "E501", "E731"]
+    select = [
+        # Pyflakes
+        "F",
+        # Pycodestyle
+        "E",
+        "Q",
+        "W",
+        # isort
+        "I",
+        # Pyupgrade
+        "UP",
+    ]
 
 [tool.ruff.lint.flake8-quotes]
-inline-quotes = "double"
-multiline-quotes = "double"
-docstring-quotes = "double"
+    docstring-quotes = "double"
+    inline-quotes    = "double"
+    multiline-quotes = "double"
 
 [tool.ruff.lint.mccabe]
-max-complexity = 18
+    max-complexity = 18
 
 [tool.ruff.lint.isort]
-known-first-party = ["ndpyramid"]
-
+    known-first-party = ["ndpyramid"]
 
 # Notebook ruff config
 [tool.ruff.lint.per-file-ignores]
-"*.ipynb" = ["D100", "E402", "F401"]
-
+    "*.ipynb" = ["D100", "E402", "F401"]
 
 [tool.pytest.ini_options]
-console_output_style = "count"
-addopts = "--cov=./ --cov-report=xml --verbose"
+    addopts              = "--cov=./ --cov-report=xml --verbose"
+    console_output_style = "count"
 
 [tool.mypy]
-ignore_missing_imports = true
-no_implicit_optional = false
+    ignore_missing_imports = true
+    no_implicit_optional   = false
