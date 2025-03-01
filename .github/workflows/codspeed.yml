@@ -41,7 +41,7 @@ jobs:
           python -m pip install -e . --no-deps
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v3.2.0
+        uses: CodSpeedHQ/action@v3.4.0
         with:
           run: |
             conda list
