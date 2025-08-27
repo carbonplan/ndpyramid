@@ -6,9 +6,17 @@ version: 2
 
 # Set the version of Python and other tools you might need
 build:
-  os: ubuntu-20.04
-  tools:
-    python: "mambaforge-4.10"
+  os: ubuntu-24.04
+  jobs:
+    create_environment:
+      - asdf plugin add pixi
+      - asdf install pixi latest
+      - asdf global pixi latest
+    install:
+      - pixi install
+    build:
+      html:
+        - pixi run -e docs sphinx-build -T -b html docs $READTHEDOCS_OUTPUT/html
 
 # Build documentation in the doc/ directory with Sphinx
 sphinx:
