@@ -44,7 +44,7 @@ jobs:
 
       - name: Run tests
         run: |
-          pixi run -e {{ matrix.environment }} pytest
+          pixi run -e ${{ matrix.environment }} pytest
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5

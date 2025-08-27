@@ -20,30 +20,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Miniconda
-        uses: conda-incubator/setup-miniconda@v3.1.1
+      - uses: prefix-dev/setup-pixi@v0.8.14
         with:
-          auto-activate-base: true
-          activate-environment: "" # base environment
-          channels: conda-forge,nodefaults
-          channel-priority: strict
-
-      - name: Install dependencies
-        run: |
-          # $CONDA is an environment variable pointing to the root of the miniconda directory
-          # Preprend $CONDA/bin to $PATH so that conda's python is used over system python
-          echo $CONDA/bin >> $GITHUB_PATH
-          conda install --solver=libmamba dask python=3.10 \
-                        esmpy>=8.2.0 mpich netcdf4 numpy pip pooch pydantic>=1.10 pyproj \
-                        pytest pytest-cov pytest-mypy rasterio rioxarray scipy sparse>=0.13.0 \
-                        xarray>=2024.10.0 xesmf zarr cf_xarray>=0.8.0
-          python -m pip install -U pytest-codspeed setuptools
-          python -m pip install -e . --no-deps
+          pixi-version: v0.43.3
+          cache: false # no pixi.lock
+          locked: false
 
       - name: Run benchmarks
         uses: CodSpeedHQ/action@v3.2.0
         with:
           run: |
-            conda list
-            python -c "import ndpyramid; print(ndpyramid.__version__)"
-            python -m pytest --codspeed
+            pixi run -e py313 -m pytest --codspeed
