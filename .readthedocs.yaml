@@ -13,7 +13,7 @@ build:
       - asdf install pixi latest
       - asdf global pixi latest
     install:
-      - pixi install
+      - pixi install -e docs
     build:
       html:
         - pixi run -e docs sphinx-build -T -b html docs $READTHEDOCS_OUTPUT/html
@@ -21,11 +21,3 @@ build:
 # Build documentation in the doc/ directory with Sphinx
 sphinx:
   configuration: docs/conf.py
-
-# Optionally declare the Python requirements required to build your docs
-conda:
-  environment: ci/doc.yml
-python:
-  install:
-    - method: pip
-      path: .
