@@ -38,9 +38,12 @@ jobs:
 
       - run: pixi info
 
-      - name: Run tests
+      - name: Run tests with Python 3.12
         run: |
           pixi run -e py312 pytest
+
+      - name: Run tests with Python 3.13
+        run: |
           pixi run -e py313 pytest
 
       - name: Upload coverage to Codecov
