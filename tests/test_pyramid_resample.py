@@ -3,10 +3,7 @@ import pytest
 import xarray as xr
 from zarr.storage import MemoryStore
 
-from ndpyramid import (
-    pyramid_reproject,
-    pyramid_resample,
-)
+from ndpyramid import pyramid_reproject, pyramid_resample
 from ndpyramid.testing import verify_bounds
 
 
@@ -25,7 +22,7 @@ def test_resampled_pyramid(temperature, benchmark, resampling):
     assert len(pyramid.ds.attrs["multiscales"][0]["datasets"]) == levels
     assert pyramid.attrs["multiscales"][0]["datasets"][0]["crs"] == "EPSG:3857"
     assert pyramid["0"].attrs["multiscales"][0]["datasets"][0]["crs"] == "EPSG:3857"
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 @pytest.mark.xfail(reseason="Need to fix resampling of 2D data (tied to other_chunks issue)")
@@ -43,7 +40,7 @@ def test_resampled_pyramid_2D(temperature, method, benchmark):
     assert len(pyramid.ds.attrs["multiscales"][0]["datasets"]) == levels
     assert pyramid.attrs["multiscales"][0]["datasets"][0]["crs"] == "EPSG:3857"
     assert pyramid["0"].attrs["multiscales"][0]["datasets"][0]["crs"] == "EPSG:3857"
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 def test_reprojected_pyramid_clear_attrs(dataset_3d, benchmark):
@@ -55,7 +52,7 @@ def test_reprojected_pyramid_clear_attrs(dataset_3d, benchmark):
     verify_bounds(pyramid)
     for _, da in pyramid["0"].ds.items():
         assert not da.attrs
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 @pytest.mark.xfail(reseason="Need to fix handling of other_chunks")
@@ -66,7 +63,7 @@ def test_reprojected_pyramid_other_chunks(dataset_3d, benchmark):
         lambda: pyramid_resample(dataset_3d, levels=levels, x="x", y="y", other_chunks={"time": 5})
     )
     verify_bounds(pyramid)
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 def test_resampled_pyramid_without_CF(dataset_3d, benchmark):
@@ -79,7 +76,7 @@ def test_resampled_pyramid_without_CF(dataset_3d, benchmark):
     assert len(pyramid.ds.attrs["multiscales"][0]["datasets"]) == levels
     assert pyramid.attrs["multiscales"][0]["datasets"][0]["crs"] == "EPSG:3857"
     assert pyramid["0"].attrs["multiscales"][0]["datasets"][0]["crs"] == "EPSG:3857"
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 def test_resampled_pyramid_fill(temperature, benchmark):
