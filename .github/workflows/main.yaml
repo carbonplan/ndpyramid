@@ -18,10 +18,14 @@ concurrency:
 jobs:
   test:
     if: github.repository == 'carbonplan/ndpyramid'
-    name: build
+    name: ${{ matrix.environment }}-build
     runs-on: ubuntu-latest
     permissions:
       id-token: write # This is required for requesting OIDC token for codecov
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [py312, py313]
     timeout-minutes: 20
     defaults:
       run:
@@ -38,13 +42,9 @@ jobs:
 
       - run: pixi info
 
-      - name: Run tests with Python 3.12
+      - name: Run tests
         run: |
-          pixi run -e py312 pytest
-
-      - name: Run tests with Python 3.13
-        run: |
-          pixi run -e py313 pytest
+          pixi run -e {{ matrix.environment }} pytest
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v5
