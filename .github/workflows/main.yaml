@@ -37,9 +37,7 @@ jobs:
           locked: false
 
       - run: pixi info
-      - name: List installed libraries/packages
-        run: |
-          pixi list -e dev
+
       - name: Run tests
         run: |
           pixi run -e py312 pytest
