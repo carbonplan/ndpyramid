@@ -62,6 +62,8 @@
         "sphinx-copybutton",
         "sphinx-design",
         "sphinxext-opengraph",
+        "matplotlib",
+        "s3fs",
     ]
 
 [project.urls]
