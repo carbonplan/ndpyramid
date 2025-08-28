@@ -23,7 +23,7 @@ def test_resampled_pyramid(temperature, benchmark, resampling):
     pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
-@pytest.mark.xfail(reseason="Need to fix resampling of 2D data (tied to other_chunks issue)")
+@pytest.mark.xfail(reason="Need to fix resampling of 2D data (tied to other_chunks issue)")
 @pytest.mark.parametrize("method", ["bilinear", "nearest", {"air": "nearest"}])
 def test_resampled_pyramid_2D(temperature, method, benchmark):
     levels = 2
@@ -50,7 +50,7 @@ def test_reprojected_pyramid_clear_attrs(dataset_3d, benchmark):
     pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
-@pytest.mark.xfail(reseason="Need to fix handling of other_chunks")
+@pytest.mark.xfail(reason="Need to fix handling of other_chunks")
 def test_reprojected_pyramid_other_chunks(dataset_3d, benchmark):
     levels = 2
     pyramid = benchmark(
