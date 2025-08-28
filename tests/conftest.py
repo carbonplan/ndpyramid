@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
 import pytest
-import rioxarray  # noqa
 import xarray as xr
+from odc.geo.xr import assign_crs
 
 
 @pytest.fixture
@@ -25,7 +25,7 @@ def temperature():
     # Transpose coordinates for compatibility with pyresample
     ds = ds.transpose("time", "lat", "lon")
     # Write crs for pyramid_resampled and pyramid_reproject
-    ds = ds.rio.write_crs("EPSG:4326")
+    ds = assign_crs(ds, "EPSG:4326")
     # Chunk the dataset for testing `pyramid_resample`
     ds = ds.chunk({"time": 1000, "lat": 20, "lon": 20})
     return ds
@@ -71,7 +71,7 @@ def dataset_4d(non_dim_coords=False, start="2010-01-01"):
         "units": f"days since {time[0].strftime('%Y-%m-%d')}",
         "calendar": "proleptic_gregorian",
     }
-    ds = ds.rio.write_crs("EPSG:4326")
+    ds = assign_crs(ds, "EPSG:4326")
 
     return ds
 
@@ -114,7 +114,7 @@ def dataset_3d(non_dim_coords=False, start="2010-01-01"):
         "units": f"days since {time[0].strftime('%Y-%m-%d')}",
         "calendar": "proleptic_gregorian",
     }
-    ds = ds.rio.write_crs("EPSG:4326")
+    ds = assign_crs(ds, "EPSG:4326")
     ds = ds.chunk({"x": 100, "y": 100, "time": 10})
 
     return ds

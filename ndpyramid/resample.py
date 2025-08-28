@@ -6,15 +6,11 @@ from collections import defaultdict
 
 import numpy as np
 import xarray as xr
+from odc.geo.xr import assign_crs
 from pyproj.crs import CRS
 
 from .common import Projection, ProjectionOptions
-from .utils import (
-    add_metadata_and_zarr_encoding,
-    get_levels,
-    get_version,
-    multiscales_template,
-)
+from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
 
 ResamplingOptions = typing.Literal["bilinear", "nearest"]
 
@@ -70,7 +66,12 @@ def _da_resample(
         rx = da.x[-1] + (da.x[-1] - da.x[-2]) / 2
         uy = da.y[0] - (da.y[1] - da.y[0]) / 2
         ly = da.y[-1] + (da.y[-1] - da.y[-2]) / 2
-        source_crs = CRS.from_string(da.rio.crs.to_string())
+        # Retrieve CRS from odc-geo accessor (assigned via assign_crs in fixtures/pipeline)
+        try:
+            odc_crs = da.odc.crs  # odc.geo.CRS instance
+            source_crs = CRS.from_string(str(odc_crs))
+        except Exception as e:  # pragma: no cover - fallback path
+            raise ValueError("Unable to determine source CRS for resampling") from e
         source_area_def = create_area_def(
             area_id=2,
             projection=source_crs,
@@ -193,7 +194,7 @@ def level_resample(
                 resampling=resampling_dict[k],
             )
     ds_level.attrs["multiscales"] = attrs["multiscales"]
-    ds_level = ds_level.rio.write_crs(projection_model._crs)
+    ds_level = assign_crs(ds_level, projection_model._crs)
     return ds_level
 
 

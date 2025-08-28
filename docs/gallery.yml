@@ -1,11 +1,11 @@
 notebooks-examples:
-  - title: Pyramids from GeoTiff via rasterio
+  - title: Pyramids from GeoTiff
     path: examples/geotiff.html
     thumbnail: _static/thumbnails/geotiff.jpg
   - title: Pyramids from Zarr via pyresample
     path: examples/pyramid-resample.html
     thumbnail: _static/thumbnails/resample.jpg
-  - title: Pyramids from Zarr via rasterio
+  - title: Pyramids from Zarr
     path: examples/pyramid-reproject.html
     thumbnail: _static/thumbnails/reproject.jpg
   - title: Pyramids from Zarr via xesmf
