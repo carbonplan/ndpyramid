@@ -64,7 +64,7 @@ copybutton_prompt_is_regexp = True
 
 autosummary_generate = True
 
-nb_execution_mode = "cache"
+nb_execution_mode = "off"
 nb_execution_timeout = 600
 nb_execution_raise_on_error = False
 
