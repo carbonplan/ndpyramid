@@ -111,7 +111,7 @@ def level_resample(
     projection: ProjectionOptions = "web-mercator",
     level: int,
     pixels_per_tile: int = 128,
-    other_chunks: dict = None,
+    other_chunks: dict | None = None,
     resampling: ResamplingOptions | dict = "bilinear",
     clear_attrs: bool = False,
 ) -> xr.Dataset:
@@ -204,9 +204,9 @@ def pyramid_resample(
     x: str,
     y: str,
     projection: ProjectionOptions = "web-mercator",
-    levels: int = None,
+    levels: int | None = None,
     pixels_per_tile: int = 128,
-    other_chunks: dict = None,
+    other_chunks: dict | None = None,
     resampling: ResamplingOptions | dict = "bilinear",
     clear_attrs: bool = False,
 ) -> xr.DataTree:
@@ -261,12 +261,8 @@ def pyramid_resample(
         )
     }
 
-    # set up pyramid
-    plevels = {}
-
-    # pyramid data
-    for level in range(levels):
-        plevels[str(level)] = level_resample(
+    plevels = {
+        str(level): level_resample(
             ds,
             x=x,
             y=y,
@@ -277,7 +273,8 @@ def pyramid_resample(
             resampling=resampling,
             clear_attrs=clear_attrs,
         )
-
+        for level in range(levels)
+    }
     # create the final multiscale pyramid
     plevels["/"] = xr.Dataset(attrs=attrs)
     pyramid = xr.DataTree.from_dict(plevels)

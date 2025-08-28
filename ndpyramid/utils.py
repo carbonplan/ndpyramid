@@ -36,12 +36,12 @@ def get_levels(ds: xr.Dataset) -> int:
 
 def multiscales_template(
     *,
-    datasets: list = None,
+    datasets: list | None = None,
     type: str = "",
     method: str = "",
     version: str = "",
-    args: list = None,
-    kwargs: dict = None,
+    args: list | None = None,
+    kwargs: dict | None = None,
 ):
     if datasets is None:
         datasets = []
@@ -143,9 +143,9 @@ def add_metadata_and_zarr_encoding(
     pyramid: xr.DataTree,
     *,
     levels: int,
-    other_chunks: dict = None,
+    other_chunks: dict | None = None,
     pixels_per_tile: int = 128,
-    projection: Projection = None,
+    projection: Projection | None = None,
 ) -> xr.DataTree:
     """Postprocess data pyramid. Adds multiscales metadata and sets Zarr encoding
 
