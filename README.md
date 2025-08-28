@@ -38,6 +38,8 @@ To install a development version from source:
 ```python
 git clone https://github.com/carbonplan/ndpyramid
 cd ndpyramid
+pixi install
+# or
 python -m pip install -e .
 ```
 
@@ -68,7 +70,7 @@ ds = ds.rio.write_crs('EPSG:4326')
 pyramid = pyramid_reproject(ds, levels=2)
 
 # write the pyramid to zarr
-pyramid.to_zarr('./path/to/write')
+pyramid.to_zarr('./path/to/write', zarr_format=2, consolidated=True, mode="w")
 ```
 
 See the docstrings and [API documentation](https://ndpyramid.readthedocs.io/en/latest/api.html) for more details about input parameters and options.

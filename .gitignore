@@ -132,3 +132,7 @@ dmypy.json
 
 docs/generated/
 docs/notebooks-examples-gallery.txt
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+pixi.lock

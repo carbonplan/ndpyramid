@@ -34,7 +34,7 @@ def test_regridded_pyramid(temperature, regridder_apply_kws, benchmark):
     )
     assert pyramid["0"].ds.air.attrs == expected_attrs
     assert pyramid["1"].ds.air.attrs == expected_attrs
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 def test_regridded_pyramid_with_weights(temperature, benchmark):
@@ -51,7 +51,7 @@ def test_regridded_pyramid_with_weights(temperature, benchmark):
     verify_bounds(pyramid)
     assert pyramid.ds.attrs["multiscales"]
     assert len(pyramid.ds.attrs["multiscales"][0]["datasets"]) == levels
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 @pytest.mark.parametrize("projection", ["web-mercator", "equidistant-cylindrical"])

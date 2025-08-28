@@ -11,9 +11,8 @@
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.10",
-        "Programming Language :: Python :: 3.11",
         "Programming Language :: Python :: 3.12",
+        "Programming Language :: Python :: 3.13",
         "Programming Language :: Python",
 
         "Topic :: Scientific/Engineering",
@@ -23,16 +22,15 @@
     license = { text = "MIT" }
     name = "ndpyramid"
     readme = "README.md"
-    requires-python = ">=3.10"
+    requires-python = ">=3.12"
 
     dependencies = [
-        "cf_xarray>=0.8.0",
-        "numpy",
-        "pydantic>=1.10",
-        "pyproj",
-        "rasterio",
-        "xarray[complete]>=2024.10.0",
-        "zarr",
+        "cf-xarray>=0.10.7,<0.11",
+        "pydantic>=2.11.7,<3",
+        "pyproj>=3.7.2,<4",
+        "rasterio>=1.4.3,<2",
+        "xarray>=2025.8.0,<2026",
+        "zarr>=3.1.2,<4",
     ]
 
 [project.optional-dependencies]
@@ -43,8 +41,8 @@
         "rioxarray",
         "scipy",
     ]
-    dask = ["dask[complete]", "pyresample"]
-    jupyter = ['ipytree>=0.2.2', 'ipywidgets>=8.0.0', 'matplotlib', 'notebook']
+    dask = ["dask", "pyresample"]
+    jupyter = ['ipytree>=0.2.2', 'ipywidgets>=8.0.0', 'matplotlib', 'jupyterlab', 'ipython']
     xesmf = ["xesmf>=0.8"]
 
     test = [
@@ -55,6 +53,17 @@
         "pytest-codspeed",
         "pytest-cov",
         "pytest-mypy",
+    ]
+
+    docs = [
+        "myst-nb",
+        "nbsphinx",
+        "sphinx-book-theme",
+        "sphinx-copybutton",
+        "sphinx-design",
+        "sphinxext-opengraph",
+        "matplotlib",
+        "s3fs",
     ]
 
 [project.urls]
@@ -76,14 +85,14 @@
 [tool.black]
     line-length               = 100
     skip-string-normalization = true
-    target-version            = ['py310']
+    target-version            = ['py312']
 
 [tool.ruff]
 
     builtins       = ["ellipsis"]
     extend-include = ["*.ipynb"]
     line-length    = 100
-    target-version = "py310"
+    target-version = "py312"
     # Exclude a variety of commonly ignored directories.
     exclude = [
         ".bzr",
@@ -147,3 +156,46 @@
 [tool.mypy]
     ignore_missing_imports = true
     no_implicit_optional   = false
+
+[tool.pixi.workspace]
+    channels  = ["conda-forge"]
+    platforms = ["linux-64", "linux-aarch64", "osx-64", "osx-arm64", "win-64"]
+
+[tool.pixi.pypi-dependencies]
+    ndpyramid = { path = ".", editable = true }
+
+
+[tool.pixi.feature.py312.dependencies]
+python = "3.12.*"
+[tool.pixi.feature.py313.dependencies]
+python = "3.13.*"
+
+[tool.pixi.environments]
+    complete = { features = [
+        "complete",
+        "dask",
+        "jupyter",
+        "xesmf",
+    ], solve-group = "default" }
+    dask = { features = ["dask"], solve-group = "default" }
+    default = { solve-group = "default" }
+    docs = { features = ["complete", "docs"], solve-group = "default" }
+    jupyter = { features = ["jupyter"], solve-group = "default" }
+    test = { features = ["complete", "test"], solve-group = "default" }
+    xesmf = { features = ["xesmf"], solve-group = "default" }
+    py312 = { features = ["py312", "complete", "test"], solve-group = "py312" }
+    py313 = { features = ["py313", "complete", "test"], solve-group = "py313" }
+
+[tool.pixi.tasks]
+
+[tool.pixi.feature.test.tasks]
+    tests = { cmd = "pytest" }
+
+[tool.pixi.dependencies]
+    dask        = ">=2025.7.0,<2026"
+    distributed = ">=2025.7.0,<2026"
+    pooch       = ">=1.8.2,<2"
+    pyproj      = ">=3.7.2,<4"
+    pyresample  = ">=1.34.2,<2"
+    rioxarray   = ">=0.19.0,<0.20"
+    xesmf       = ">=0.8.7,<0.9"

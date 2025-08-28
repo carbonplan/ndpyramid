@@ -19,7 +19,7 @@ def test_xarray_coarsened_pyramid(temperature, benchmark):
     assert len(pyramid.ds.attrs["multiscales"][0]["datasets"]) == len(factors)
     assert pyramid.ds.attrs["multiscales"][0]["metadata"]["method"] == "pyramid_coarsen"
     assert pyramid.ds.attrs["multiscales"][0]["type"] == "reduce"
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 @pytest.mark.parametrize("method_label", [None, "sel_coarsen"])
@@ -43,7 +43,7 @@ def test_xarray_custom_coarsened_pyramid(temperature, benchmark, method_label):
     assert len(pyramid.ds.attrs["multiscales"][0]["datasets"]) == len(factors)
     assert pyramid.ds.attrs["multiscales"][0]["metadata"]["method"] == "sel_coarsen"
     assert pyramid.ds.attrs["multiscales"][0]["type"] == "pick"
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 def test_reprojected_pyramid(temperature, benchmark):
@@ -55,7 +55,7 @@ def test_reprojected_pyramid(temperature, benchmark):
     assert len(pyramid.ds.attrs["multiscales"][0]["datasets"]) == levels
     assert pyramid.attrs["multiscales"][0]["datasets"][0]["crs"] == "EPSG:3857"
     assert pyramid["0"].attrs["multiscales"][0]["datasets"][0]["crs"] == "EPSG:3857"
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 def test_reprojected_pyramid_resampling_dict(dataset_3d, benchmark):
@@ -71,7 +71,7 @@ def test_reprojected_pyramid_resampling_dict(dataset_3d, benchmark):
         "ones": "bilinear",
         "rand": "nearest",
     }
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 def test_reprojected_pyramid_clear_attrs(dataset_3d, benchmark):
@@ -81,7 +81,7 @@ def test_reprojected_pyramid_clear_attrs(dataset_3d, benchmark):
     verify_bounds(pyramid)
     for _, da in pyramid["0"].ds.items():
         assert not da.attrs
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 def test_reprojected_pyramid_4d(dataset_4d, benchmark):
@@ -95,7 +95,7 @@ def test_reprojected_pyramid_4d(dataset_4d, benchmark):
     assert len(pyramid.ds.attrs["multiscales"][0]["datasets"]) == levels
     assert pyramid.attrs["multiscales"][0]["datasets"][0]["crs"] == "EPSG:3857"
     assert pyramid["0"].attrs["multiscales"][0]["datasets"][0]["crs"] == "EPSG:3857"
-    pyramid.to_zarr(MemoryStore())
+    pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
 def test_reprojected_pyramid_fill(temperature, benchmark):
