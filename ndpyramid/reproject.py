@@ -185,12 +185,8 @@ def pyramid_reproject(
         )
     }
 
-    # set up pyramid
-    plevels = {}
-
-    # pyramid data
-    for level in range(levels):
-        plevels[str(level)] = level_reproject(
+    plevels = {
+        str(level): level_reproject(
             ds,
             projection=projection,
             level=level,
@@ -199,7 +195,8 @@ def pyramid_reproject(
             extra_dim=extra_dim,
             clear_attrs=clear_attrs,
         )
-
+        for level in range(levels)
+    }
     # create the final multiscale pyramid
     plevels["/"] = xr.Dataset(attrs=attrs)
     pyramid = xr.DataTree.from_dict(plevels)
