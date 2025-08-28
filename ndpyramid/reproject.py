@@ -15,7 +15,7 @@ from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, mult
 def _da_reproject(da: xr.DataArray, *, dim: int, crs: str, resampling: str, transform):
     if da.encoding.get("_FillValue") is None and np.issubdtype(da.dtype, np.floating):
         da.encoding["_FillValue"] = np.nan
-    geobox = GeoBox(dim, dim, transform, OdcCRS(crs))
+    geobox = GeoBox((dim, dim), transform, OdcCRS(crs))
     if "spatial_ref" not in da.coords:
         da = assign_crs(da, crs)
     return xr_reproject(da, geobox, resampling=resampling)

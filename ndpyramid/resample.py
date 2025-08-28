@@ -185,13 +185,17 @@ def level_resample(
                 other_chunk = list(da.sizes.values())[0]
             else:
                 other_chunk = list(other_chunks.values())[0]
+            # Cast resampling method to expected literal type if possible
+            method = resampling_dict[k]
+            if method not in ("bilinear", "nearest"):
+                raise ValueError(f"Unsupported resampling method '{method}' for pyramid_resample")
             ds_level[k] = _da_resample(
                 da,
                 dim=dim,
                 projection_model=projection_model,
                 pixels_per_tile=pixels_per_tile,
                 other_chunk=other_chunk,
-                resampling=resampling_dict[k],
+                resampling=method,  # type: ignore[arg-type]
             )
     ds_level.attrs["multiscales"] = attrs["multiscales"]
     ds_level = assign_crs(ds_level, projection_model._crs)
