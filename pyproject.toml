@@ -42,7 +42,7 @@
         "scipy",
     ]
     dask = ["dask", "pyresample"]
-    jupyter = ['ipytree>=0.2.2', 'ipywidgets>=8.0.0', 'matplotlib', 'notebook']
+    jupyter = ['ipytree>=0.2.2', 'ipywidgets>=8.0.0', 'matplotlib', 'jupyterlab', 'ipython']
     xesmf = ["xesmf>=0.8"]
 
     test = [
@@ -56,7 +56,7 @@
     ]
 
     docs = [
-        "myst",
+        "myst-nb",
         "nbsphinx",
         "sphinx-book-theme",
         "sphinx-copybutton",

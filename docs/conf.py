@@ -35,15 +35,28 @@ release = "v0.1.0"
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    "IPython.sphinxext.ipython_directive",
-    "IPython.sphinxext.ipython_console_highlighting",
     "myst_parser",
     "sphinx.ext.autodoc",
-    "sphinx_copybutton",
+    "sphinx.ext.viewcode",
     "sphinx.ext.autosummary",
+    "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.extlinks",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
+    "myst_nb",
+    "sphinxext.opengraph",
+    "sphinx_copybutton",
     "sphinx_design",
-    "nbsphinx",
 ]
+
+# MyST config
+myst_enable_extensions = ["amsmath", "colon_fence", "deflist", "html_image"]
+myst_url_schemes = ["http", "https", "mailto"]
+
+# sphinx-copybutton configurations
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
 
 autosummary_generate = True
 
@@ -87,12 +100,12 @@ def update_gallery(app: Sphinx):
             f"""
          .. grid-item-card::
             :text-align: center
-            :link: {item['path']}
+            :link: {item["path"]}
 
-            .. image:: {item['thumbnail']}
-                :alt: {item['title']}
+            .. image:: {item["thumbnail"]}
+                :alt: {item["title"]}
             +++
-            {item['title']}
+            {item["title"]}
             """
             for item in gallery[key]
         ]
