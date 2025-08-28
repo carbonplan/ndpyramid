@@ -6,6 +6,7 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
+import datetime
 import pathlib
 import sys
 from textwrap import dedent, indent
@@ -13,6 +14,8 @@ from textwrap import dedent, indent
 import yaml
 from sphinx.application import Sphinx
 from sphinx.util import logging
+
+import ndpyramid
 
 LOGGER = logging.getLogger("conf")
 
@@ -27,9 +30,11 @@ print("sys.path:", sys.path)
 
 
 project = "ndpyramid"
-copyright = "2023, carbonplan"
+this_year = datetime.datetime.now().year
+copyright = f"{this_year}, carbonplan"
 author = "carbonplan"
-release = "v0.1.0"
+
+release = ndpyramid.__version__
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
