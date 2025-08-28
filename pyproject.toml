@@ -54,6 +54,7 @@
     xesmf = ["xesmf>=0.8"]
 
     test = [
+        "jupyterlab",
         "ndpyramid[complete]",
         "pre-commit",
         "pytest",

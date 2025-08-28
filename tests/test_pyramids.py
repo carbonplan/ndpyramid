@@ -53,11 +53,11 @@ def test_reprojected_pyramid(temperature, benchmark):
     pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
-def test_reprojected_pyramid_resampling_dict(dataset_3d, benchmark):
+def test_reprojected_pyramid_resampling_dict(dataset_3d_webm, benchmark):
     levels = 2
     pyramid = benchmark(
         lambda: pyramid_reproject(
-            dataset_3d, levels=levels, resampling={"ones": "bilinear", "rand": "nearest"}
+            dataset_3d_webm, levels=levels, resampling={"ones": "bilinear", "rand": "nearest"}
         )
     )
     verify_bounds(pyramid)
@@ -68,20 +68,20 @@ def test_reprojected_pyramid_resampling_dict(dataset_3d, benchmark):
     pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
-def test_reprojected_pyramid_clear_attrs(dataset_3d, benchmark):
+def test_reprojected_pyramid_clear_attrs(dataset_3d_webm, benchmark):
     levels = 2
-    pyramid = benchmark(lambda: pyramid_reproject(dataset_3d, levels=levels, clear_attrs=True))
+    pyramid = benchmark(lambda: pyramid_reproject(dataset_3d_webm, levels=levels, clear_attrs=True))
     verify_bounds(pyramid)
     for _, da in pyramid["0"].ds.items():
         assert not da.attrs
     pyramid.to_zarr(MemoryStore(), zarr_format=2)
 
 
-def test_reprojected_pyramid_4d(dataset_4d, benchmark):
+def test_reprojected_pyramid_4d(dataset_4d_webm, benchmark):
     levels = 2
     with pytest.raises(Exception):
-        pyramid = pyramid_reproject(dataset_4d, levels=levels)
-    pyramid = benchmark(lambda: pyramid_reproject(dataset_4d, levels=levels, extra_dim="band"))
+        pyramid = pyramid_reproject(dataset_4d_webm, levels=levels)
+    pyramid = benchmark(lambda: pyramid_reproject(dataset_4d_webm, levels=levels, extra_dim="band"))
     verify_bounds(pyramid)
     assert pyramid.ds.attrs["multiscales"]
     assert len(pyramid.ds.attrs["multiscales"][0]["datasets"]) == levels

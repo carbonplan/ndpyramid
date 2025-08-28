@@ -5,7 +5,7 @@ import xarray as xr
 from odc.geo.xr import assign_crs
 
 # Constants
-MAX_WEBMERC_LAT = 85.0511287798066  # Valid latitude domain for EPSG:3857 (Web Mercator)
+MAX_WEBMERC_LAT = 85  # Valid latitude domain for EPSG:3857 (Web Mercator)
 
 
 # ---------------------------------------------------------------------------
