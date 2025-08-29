@@ -88,9 +88,10 @@ def test_resampled_pyramid_fill(temperature, benchmark):
         "nearest",
     ],
 )
-def test_reprojected_resample_pyramid_values(dataset_3d_webm, method, benchmark):
+def test_reprojected_resample_pyramid_values(dataset_3d, method, benchmark):
     levels = 2
-    reprojected = pyramid_reproject(dataset_3d_webm, levels=levels, resampling=method)
-    resampled = pyramid_resample(dataset_3d_webm, levels=levels, x="x", y="y", resampling=method)
+    # Needs to call .compute() before passing to odc-geo to avoid https://github.com/opendatacube/odc-geo/issues/147
+    reprojected = pyramid_reproject(dataset_3d.compute(), levels=levels, resampling=method)
+    resampled = pyramid_resample(dataset_3d, levels=levels, x="x", y="y", resampling=method)
     xr.testing.assert_allclose(reprojected["0"].ds, resampled["0"].ds)
     xr.testing.assert_allclose(reprojected["1"].ds, resampled["1"].ds)

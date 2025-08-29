@@ -65,6 +65,7 @@
     ]
 
     docs = [
+        "jupyterlab",
         "matplotlib",
         "myst-nb",
         "nbsphinx",

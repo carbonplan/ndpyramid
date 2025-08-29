@@ -4,10 +4,6 @@ import pytest
 import xarray as xr
 from odc.geo.xr import assign_crs
 
-# Constants
-MAX_WEBMERC_LAT = 85  # Valid latitude domain for EPSG:3857 (Web Mercator)
-
-
 # ---------------------------------------------------------------------------
 # Utility helpers
 # ---------------------------------------------------------------------------
@@ -28,27 +24,6 @@ def _build_lat(ny: int) -> np.ndarray:
     using the same pattern as longitude.
     """
     return (np.arange(ny) + 0.5) * 180.0 / ny - 90.0
-
-
-def _maybe_clip_lat_for_web_mercator(y_full: np.ndarray, web_mercator_safe: bool) -> np.ndarray:
-    """
-    Optionally clip latitude centers to the valid Web Mercator extent.
-    """
-    if not web_mercator_safe:
-        return y_full
-    mask = (y_full >= -MAX_WEBMERC_LAT) & (y_full <= MAX_WEBMERC_LAT)
-    return y_full[mask]
-
-
-def _assert_web_mercator_safe(y: np.ndarray):
-    """
-    Raise a clear error if latitude extent exceeds Web Mercator domain.
-    """
-    if y.min() < -MAX_WEBMERC_LAT or y.max() > MAX_WEBMERC_LAT:
-        raise ValueError(
-            f"Latitude extent ({y.min():.6f}, {y.max():.6f}) exceeds Web Mercator limit "
-            f"±{MAX_WEBMERC_LAT}. Clip first (web_mercator_safe=True) or choose another CRS."
-        )
 
 
 def _encode_time(ds: xr.Dataset, start_time: pd.Timestamp):
@@ -116,8 +91,6 @@ def _make_dataset_4d(
     nx: int = 1440,
     start: str = "2010-01-01",
     non_dim_coords: bool = False,
-    web_mercator_safe: bool = False,
-    enforce_safe: bool = False,
     crs: str = "EPSG:4326",
     seed: int | None = 0,
 ) -> xr.Dataset:
@@ -126,31 +99,19 @@ def _make_dataset_4d(
 
     Parameters
     ----------
-    web_mercator_safe :
-        If True, clip latitude to ±85.05112878 for Web Mercator compatibility.
-    enforce_safe :
-        If True, raise if dataset is NOT Web Mercator safe (only checked when
-        web_mercator_safe is False).
     crs :
         CRS string to assign (metadata only).
     seed :
         Random seed for reproducibility (None leaves RNG unseeded).
     """
-    if seed is not None:
-        rng = np.random.default_rng(seed)
-    else:
-        rng = np.random.default_rng()
-
+    rng = np.random.default_rng() if seed is None else np.random.default_rng(seed)
     time = pd.date_range(start=start, periods=nt, freq="D")
 
     x = _build_lon(nx)
     x_attrs = {"units": "degrees_east", "xg_name": "xgitude"}
 
-    y_full = _build_lat(ny)
+    y = _build_lat(ny)
     y_full_attrs = {"units": "degrees_north", "xg_name": "yitude"}
-    y = _maybe_clip_lat_for_web_mercator(y_full, web_mercator_safe)
-    if enforce_safe and not web_mercator_safe:
-        _assert_web_mercator_safe(y)
 
     ny_eff = y.size
 
@@ -179,7 +140,6 @@ def _make_dataset_4d(
         coords=coords,
         attrs={
             "conventions": "CF 1.6",
-            "web_mercator_safe": str(web_mercator_safe),
         },
     )
 
@@ -194,14 +154,6 @@ def dataset_4d():
     Default 4D dataset including polar latitudes (NOT Web Mercator safe).
     """
     return _make_dataset_4d()
-
-
-@pytest.fixture()
-def dataset_4d_webm():
-    """
-    Web Mercator safe 4D dataset (lat clipped to ±85.05112878).
-    """
-    return _make_dataset_4d(web_mercator_safe=True)
 
 
 @pytest.fixture()
@@ -232,8 +184,6 @@ def _make_dataset_3d(
     nx: int = 1440,
     start: str = "2010-01-01",
     non_dim_coords: bool = False,
-    web_mercator_safe: bool = False,
-    enforce_safe: bool = False,
     crs: str = "EPSG:4326",
     seed: int | None = 0,
     chunks: dict | None = None,
@@ -243,21 +193,14 @@ def _make_dataset_3d(
 
     Parameters mirror _make_dataset_4d except for band dimension removal.
     """
-    if seed is not None:
-        rng = np.random.default_rng(seed)
-    else:
-        rng = np.random.default_rng()
-
+    rng = np.random.default_rng() if seed is None else np.random.default_rng(seed)
     time = pd.date_range(start=start, periods=nt, freq="D")
 
     x = _build_lon(nx)
     x_attrs = {"units": "degrees_east", "xg_name": "xgitude"}
 
-    y_full = _build_lat(ny)
+    y = _build_lat(ny)
     y_attrs = {"units": "degrees_north", "xg_name": "yitude"}
-    y = _maybe_clip_lat_for_web_mercator(y_full, web_mercator_safe)
-    if enforce_safe and not web_mercator_safe:
-        _assert_web_mercator_safe(y)
 
     ny_eff = y.size
 
@@ -282,7 +225,6 @@ def _make_dataset_3d(
         coords=coords,
         attrs={
             "conventions": "CF 1.6",
-            "web_mercator_safe": str(web_mercator_safe),
         },
     )
 
@@ -307,21 +249,13 @@ def dataset_3d():
 
 
 @pytest.fixture()
-def dataset_3d_webm():
-    """
-    Web Mercator safe 3D dataset.
-    """
-    return _make_dataset_3d(web_mercator_safe=True)
-
-
-@pytest.fixture()
 def dataset_3d_factory():
     """
     Factory fixture returning a builder for customized 3D datasets.
 
     Example:
         def test_reproject(dataset_3d_factory):
-            ds = dataset_3d_factory(web_mercator_safe=True, chunks={'time': 5, 'y': 200, 'x': 200})
+            ds = dataset_3d_factory(chunks={'time': 5, 'y': 200, 'x': 200})
             ...
     """
 
