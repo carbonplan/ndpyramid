@@ -24,7 +24,7 @@ def xesmf_weights_to_xarray(regridder) -> xr.Dataset:
     return ds
 
 
-def _reconstruct_xesmf_weights(ds_w):
+def _reconstruct_xesmf_weights(ds_w: xr.Dataset) -> xr.DataArray:
     """Reconstruct weights into format that xESMF understands"""
     import sparse
     import xarray as xr
@@ -78,6 +78,9 @@ def make_grid_ds(
 
     elif projection_model.name == "web-mercator":
         title = "Web Mercator Grid"
+
+    else:
+        title = "Unknown Projection Grid"
 
     p = projection_model._proj
 
@@ -149,7 +152,7 @@ def generate_weights_pyramid(
     ds_in: xr.Dataset,
     levels: int,
     method: str = "bilinear",
-    regridder_kws: dict = None,
+    regridder_kws: dict | None = None,
     projection: typing.Literal["web-mercator", "equidistant-cylindrical"] = "web-mercator",
 ) -> xr.DataTree:
     """Helper function to generate weights for a multiscale regridder
@@ -194,14 +197,14 @@ def generate_weights_pyramid(
 def pyramid_regrid(
     ds: xr.Dataset,
     projection: typing.Literal["web-mercator", "equidistant-cylindrical"] = "web-mercator",
-    target_pyramid: xr.DataTree = None,
-    levels: int = None,
+    target_pyramid: xr.DataTree | None = None,
+    levels: int | None = None,
     parallel_weights: bool = True,
-    weights_pyramid: xr.DataTree = None,
+    weights_pyramid: xr.DataTree | None = None,
     method: str = "bilinear",
-    regridder_kws: dict = None,
-    regridder_apply_kws: dict = None,
-    other_chunks: dict = None,
+    regridder_kws: dict | None = None,
+    regridder_apply_kws: dict | None = None,
+    other_chunks: dict | None = None,
     pixels_per_tile: int = 128,
 ) -> xr.DataTree:
     """Make a pyramid using xesmf's regridders

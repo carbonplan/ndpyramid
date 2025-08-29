@@ -66,7 +66,8 @@ import rioxarray
 from ndpyramid import pyramid_coarsen, pyramid_reproject
 
 # make a reprojected (EPSG:3857) pyramid
-ds = ds.rio.write_crs('EPSG:4326')
+from odc.geo.xr import assign_crs
+ds = assign_crs(ds, 'EPSG:4326')
 pyramid = pyramid_reproject(ds, levels=2)
 
 # write the pyramid to zarr

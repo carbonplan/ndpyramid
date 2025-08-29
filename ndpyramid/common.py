@@ -2,7 +2,7 @@ import typing
 
 import pydantic
 import pyproj
-import rasterio.transform
+from affine import Affine
 
 ProjectionOptions = typing.Literal["web-mercator", "equidistant-cylindrical"]
 
@@ -13,7 +13,6 @@ class Projection(pydantic.BaseModel):
     _proj = pydantic.PrivateAttr()
 
     def __init__(self, **data) -> None:
-
         super().__init__(**data)
         epsg_codes = {"web-mercator": "EPSG:3857", "equidistant-cylindrical": "EPSG:4326"}
         # Area extent for pyresample's `create_area_def` is (lower_left_x, lower_left_y, upper_right_x, upper_right_y)
@@ -30,16 +29,12 @@ class Projection(pydantic.BaseModel):
         self._proj = pyproj.Proj(self._crs)
         self._area_extent = area_extents[self.name]
 
-    @pydantic.validate_call
-    def transform(self, *, dim: int) -> rasterio.transform.Affine:
-
+    def transform(self, *, dim: int) -> Affine:
         if self.name == "web-mercator":
             # set up the transformation matrix for the web-mercator projection such that the data conform
             # to the slippy-map tiles assumed boundaries. See https://github.com/carbonplan/ndpyramid/pull/70
             # for detailed on calculating the parameters.
-            return rasterio.transform.Affine.translation(
-                -20037508.342789244, 20037508.342789248
-            ) * rasterio.transform.Affine.scale(
+            return Affine.translation(-20037508.342789244, 20037508.342789248) * Affine.scale(
                 (20037508.342789244 * 2) / dim, -(20037508.342789248 * 2) / dim
             )
         elif self.name == "equidistant-cylindrical":
@@ -49,6 +44,6 @@ class Projection(pydantic.BaseModel):
             # and the Affine.scale function scales the grid coordinates to match the size of the grid
             # in latitude-longitude coordinates. The resulting transformation matrix maps grid coordinates to
             # latitude-longitude coordinates.
-            return rasterio.transform.Affine.translation(
-                -180, 90
-            ) * rasterio.transform.Affine.scale(360 / dim, -180 / dim)
+            return Affine.translation(-180, 90) * Affine.scale(360 / dim, -180 / dim)
+        else:
+            raise ValueError(f"Unsupported projection name: {self.name}")
