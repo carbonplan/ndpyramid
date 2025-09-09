@@ -2,6 +2,7 @@ from __future__ import annotations  # noqa: F401
 
 import itertools
 import typing
+from collections.abc import Sequence
 
 import numpy as np
 import xarray as xr
@@ -123,6 +124,8 @@ def make_grid_ds(
 
 def make_grid_pyramid(
     levels: int = 6,
+    *,
+    level_list: Sequence[int] | None = None,
     projection: typing.Literal["web-mercator", "equidistant-cylindrical"] = "web-mercator",
     pixels_per_tile: int = 128,
 ) -> xr.DataTree:
@@ -131,7 +134,10 @@ def make_grid_pyramid(
     Parameters
     ----------
     levels : int, optional
-        Number of levels in pyramid, by default 6
+        Number of contiguous levels (0..levels-1) to build. Ignored if ``level_list`` is provided.
+    level_list : Sequence[int], optional
+        Explicit list of zoom levels to build. Useful for sparse pyramids. Mutually exclusive with
+        ``levels``.
 
     Returns
     -------
@@ -139,18 +145,25 @@ def make_grid_pyramid(
         Multiscale grid definition
 
     """
+    if level_list is not None:
+        level_indices = sorted({int(i) for i in level_list})
+    else:
+        level_indices = list(range(levels))
+
     plevels = {
         str(level): make_grid_ds(
             level, projection=projection, pixels_per_tile=pixels_per_tile
         ).chunk(-1)
-        for level in range(levels)
+        for level in level_indices
     }
     return xr.DataTree.from_dict(plevels)
 
 
 def generate_weights_pyramid(
     ds_in: xr.Dataset,
-    levels: int,
+    levels: int | None = None,
+    *,
+    level_list: Sequence[int] | None = None,
     method: str = "bilinear",
     regridder_kws: dict | None = None,
     projection: typing.Literal["web-mercator", "equidistant-cylindrical"] = "web-mercator",
@@ -161,8 +174,10 @@ def generate_weights_pyramid(
     ----------
     ds_in : xr.Dataset
         Input dataset to regrid
-    levels : int
-        Number of levels in the pyramid
+    levels : int, optional
+        Number of contiguous levels (0..levels-1) to build. Ignored if ``level_list`` is provided.
+    level_list : Sequence[int], optional
+        Explicit list of zoom levels to build (sparse weights). Mutually exclusive with ``levels``.
     method : str, optional
         Regridding method. See :py:class:`~xesmf.Regridder` for valid options, by default 'bilinear'
     regridder_kws : dict
@@ -181,15 +196,25 @@ def generate_weights_pyramid(
     regridder_kws = {} if regridder_kws is None else regridder_kws
     regridder_kws = {"periodic": True, **regridder_kws}
 
+    if levels is not None and level_list is not None:
+        raise ValueError("Specify only one of 'levels' or 'level_list'.")
+    if level_list is not None:
+        level_indices = sorted({int(i) for i in level_list})
+    else:
+        if levels is None:
+            raise ValueError("Must provide either 'levels' or 'level_list'.")
+        level_indices = list(range(levels))
+
     plevels = {}
-    for level in range(levels):
+    for level in level_indices:
         ds_out = make_grid_ds(level=level, projection=projection)
         regridder = xe.Regridder(ds_in, ds_out, method, **regridder_kws)
         ds = xesmf_weights_to_xarray(regridder)
 
         plevels[str(level)] = ds
 
-    root = xr.Dataset(attrs={"levels": levels, "regrid_method": method})
+    root_levels_attr: typing.Any = level_indices if level_list is not None else len(level_indices)
+    root = xr.Dataset(attrs={"levels": root_levels_attr, "regrid_method": method})
     plevels["/"] = root
     return xr.DataTree.from_dict(plevels)
 
@@ -199,6 +224,8 @@ def pyramid_regrid(
     projection: typing.Literal["web-mercator", "equidistant-cylindrical"] = "web-mercator",
     target_pyramid: xr.DataTree | None = None,
     levels: int | None = None,
+    *,
+    level_list: Sequence[int] | None = None,
     parallel_weights: bool = True,
     weights_pyramid: xr.DataTree | None = None,
     method: str = "bilinear",
@@ -218,7 +245,9 @@ def pyramid_regrid(
     target_pyramid : xr.DataTree, optional
         Target grids, if not provided, they will be generated, by default None
     levels : int, optional
-        Number of levels in pyramid, by default None
+        Number of contiguous levels to build (0..levels-1). Ignored if ``level_list`` provided.
+    level_list : Sequence[int], optional
+        Explicit list of zoom levels to build (sparse). Mutually exclusive with ``levels``.
     weights_pyramid : xr.DataTree, optional
        pyramid containing pregenerated weights
     parallel_weights : Bool
@@ -244,14 +273,26 @@ def pyramid_regrid(
     import xesmf as xe
 
     if target_pyramid is None:
-        if levels is not None:
+        if levels is not None and level_list is not None:
+            raise ValueError("Specify only one of 'levels' or 'level_list'.")
+        if levels is not None or level_list is not None:
             target_pyramid = make_grid_pyramid(
-                levels, projection=projection, pixels_per_tile=pixels_per_tile
+                levels if levels is not None else 0,
+                level_list=level_list,
+                projection=projection,
+                pixels_per_tile=pixels_per_tile,
             )
         else:
-            raise ValueError("must either provide a target_pyramid or number of levels")
-    if levels is None:
-        levels = len(target_pyramid.keys())  # TODO: get levels from the pyramid metadata
+            raise ValueError(
+                "must either provide a target_pyramid or number of levels / level_list"
+            )
+
+    # determine list of level indices from target_pyramid keys (excluding root if present)
+    level_indices = sorted([int(k) for k in target_pyramid.keys() if k != "/"])
+
+    # backward compatibility: if levels specified ensure it matches
+    if levels is not None and level_list is None and levels != len(level_indices):
+        raise ValueError("Provided 'levels' does not match target_pyramid contents")
 
     regridder_kws = {} if regridder_kws is None else regridder_kws
     regridder_kws = {"periodic": True, **regridder_kws}
@@ -259,7 +300,7 @@ def pyramid_regrid(
     # multiscales spec
     projection_model = Projection(name=projection)
     save_kwargs = {
-        "levels": levels,
+        "levels": level_indices,
         "pixels_per_tile": pixels_per_tile,
         "projection": projection,
         "other_chunks": other_chunks,
@@ -271,7 +312,7 @@ def pyramid_regrid(
     attrs = {
         "multiscales": multiscales_template(
             datasets=[
-                {"path": str(i), "level": i, "crs": projection_model._crs} for i in range(levels)
+                {"path": str(i), "level": i, "crs": projection_model._crs} for i in level_indices
             ],
             type="reduce",
             method="pyramid_regrid",
@@ -287,7 +328,7 @@ def pyramid_regrid(
     plevels = {}
 
     # pyramid data
-    for level in range(levels):
+    for level in level_indices:
         grid = target_pyramid[str(level)].ds.load()
         # get the regridder object
         if weights_pyramid is None:
@@ -324,7 +365,7 @@ def pyramid_regrid(
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid,
-        levels=levels,
+        levels=level_indices,
         other_chunks=other_chunks,
         pixels_per_tile=pixels_per_tile,
         projection=Projection(name=projection),
