@@ -142,7 +142,7 @@ def set_zarr_encoding(
 def add_metadata_and_zarr_encoding(
     pyramid: xr.DataTree,
     *,
-    levels: int,
+    levels: int | list[int] | tuple[int, ...],
     other_chunks: dict | None = None,
     pixels_per_tile: int = 128,
     projection: Projection | None = None,
@@ -153,8 +153,8 @@ def add_metadata_and_zarr_encoding(
     ----------
     pyramid : xr.DataTree
         Input data pyramid
-    levels : int
-        Number of levels in pyramid
+    levels : int | list[int]
+        Number of levels in pyramid (if int) or explicit list of level indices
     other_chunks : dict
         Chunks for non-spatial dims
     pixels_per_tile : int
@@ -179,15 +179,33 @@ def add_metadata_and_zarr_encoding(
     if other_chunks is not None:
         chunks |= other_chunks
 
-    for level in range(levels):
-        slevel = str(level)
-        pyramid.ds.attrs["multiscales"][0]["datasets"][level]["pixels_per_tile"] = pixels_per_tile
-        if projection:
-            pyramid.ds.attrs["multiscales"][0]["datasets"][level]["crs"] = projection._crs
-        # set dataset chunks
-        pyramid[slevel].ds = pyramid[slevel].ds.chunk(chunks)
+    if isinstance(levels, int):
+        level_indices = list(range(levels))
+    else:
+        level_indices = list(levels)
 
-        # set dataset encoding
+    # Map from level index to position in datasets list
+    level_to_pos = {
+        d["level"] if "level" in d else int(d["path"]): i
+        for i, d in enumerate(pyramid.ds.attrs["multiscales"][0]["datasets"])
+    }
+
+    for level in level_indices:
+        slevel = str(level)
+        # locate dataset metadata entry position
+        pos = level_to_pos.get(level)
+        if pos is None:
+            # fallback: search by path string
+            for i, d in enumerate(pyramid.ds.attrs["multiscales"][0]["datasets"]):
+                if d.get("path") == slevel:
+                    pos = i
+                    break
+        if pos is None:
+            continue  # skip if metadata missing (should not happen)
+        pyramid.ds.attrs["multiscales"][0]["datasets"][pos]["pixels_per_tile"] = pixels_per_tile
+        if projection:
+            pyramid.ds.attrs["multiscales"][0]["datasets"][pos]["crs"] = projection._crs
+        pyramid[slevel].ds = pyramid[slevel].ds.chunk(chunks)
         pyramid[slevel].ds = set_zarr_encoding(
             pyramid[slevel].ds,
             codec_config={"id": "zlib", "level": 1},

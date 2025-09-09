@@ -1,6 +1,7 @@
 from __future__ import annotations  # noqa: F401
 
 from collections import defaultdict
+from collections.abc import Sequence
 
 import numpy as np
 import shapely.errors
@@ -139,6 +140,7 @@ def pyramid_reproject(
     *,
     projection: ProjectionOptions = "web-mercator",
     levels: int | None = None,
+    level_list: Sequence[int] | None = None,
     pixels_per_tile: int = 128,
     other_chunks: dict | None = None,
     resampling: str | dict = "average",
@@ -154,8 +156,12 @@ def pyramid_reproject(
     projection : str, optional
         The projection to use. Default is 'web-mercator'.
     levels : int, optional
-        The number of levels to create. If None, the number of levels is
-        determined by the number of tiles in the dataset.
+        The number of (contiguous) levels to create starting at 0. Mutually exclusive with
+        ``level_list``. If both ``levels`` and ``level_list`` are ``None`` then an attempt is
+        made to infer the number of levels via ``get_levels`` (currently not implemented).
+    level_list : Sequence[int], optional
+        Explicit list of zoom levels to generate (e.g. ``[4]`` to only build Z4, or
+        ``[2,4,6]`` for a sparse pyramid). Mutually exclusive with ``levels``.
     pixels_per_tile : int, optional
         Number of pixels per tile, by default 128
     other_chunks : dict
@@ -173,11 +179,20 @@ def pyramid_reproject(
         The multiscale pyramid.
 
     """
-    if not levels:
-        levels = get_levels(ds)
+    if levels is not None and level_list is not None:
+        raise ValueError("Specify only one of 'levels' or 'level_list'.")
+
+    if level_list is not None:
+        # sanitize and sort unique levels
+        level_indices = sorted({int(idx) for idx in level_list})
+    else:
+        if not levels:
+            levels = get_levels(ds)
+        level_indices = list(range(int(levels)))
     projection_model = Projection(name=projection)
     save_kwargs = {
-        "levels": levels,
+        # store the explicit list for reproducibility
+        "levels": level_indices,
         "pixels_per_tile": pixels_per_tile,
         "projection": projection,
         "other_chunks": other_chunks,
@@ -188,7 +203,7 @@ def pyramid_reproject(
     attrs = {
         "multiscales": multiscales_template(
             datasets=[
-                {"path": str(i), "level": i, "crs": projection_model._crs} for i in range(levels)
+                {"path": str(i), "level": i, "crs": projection_model._crs} for i in level_indices
             ],
             type="reduce",
             method="pyramid_reproject",
@@ -207,7 +222,7 @@ def pyramid_reproject(
             extra_dim=extra_dim,
             clear_attrs=clear_attrs,
         )
-        for level in range(levels)
+        for level in level_indices
     }
     # create the final multiscale pyramid
     plevels["/"] = xr.Dataset(attrs=attrs)
@@ -215,7 +230,7 @@ def pyramid_reproject(
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid,
-        levels=levels,
+        levels=level_indices,
         pixels_per_tile=pixels_per_tile,
         other_chunks=other_chunks,
         projection=projection_model,
