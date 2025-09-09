@@ -28,7 +28,7 @@ def _da_reproject(da: xr.DataArray, *, dim: int, crs: str, resampling: str, tran
         raise RuntimeError(
             "Error during reprojection. This can be caused by invalid geometries in the input data. "
             "Try cleaning the geometries or using a different resampling method. If the input data contains dask-arrays, "
-            "consider using .compute() to convert them to in-memory arrays before reprojection."
+            "consider using .compute() to convert them to in-memory arrays before reprojection. "
             "See https://github.com/opendatacube/odc-geo/issues/147 for more details."
         ) from e
 
