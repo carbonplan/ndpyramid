@@ -3,6 +3,7 @@ from __future__ import annotations  # noqa: F401
 from collections import defaultdict
 
 import numpy as np
+import shapely.errors
 import xarray as xr
 from odc.geo import CRS as OdcCRS
 from odc.geo.geobox import GeoBox
@@ -13,12 +14,23 @@ from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, mult
 
 
 def _da_reproject(da: xr.DataArray, *, dim: int, crs: str, resampling: str, transform):
-    if da.encoding.get("_FillValue") is None and np.issubdtype(da.dtype, np.floating):
-        da.encoding["_FillValue"] = np.nan
-    geobox = GeoBox((dim, dim), transform, OdcCRS(crs))
-    if "spatial_ref" not in da.coords:
-        da = assign_crs(da, crs)
-    return xr_reproject(da, geobox, resampling=resampling)
+    try:
+        if da.encoding.get("_FillValue") is None and np.issubdtype(da.dtype, np.floating):
+            da.encoding["_FillValue"] = np.nan
+        geobox = GeoBox((dim, dim), transform, OdcCRS(crs))
+        if "spatial_ref" not in da.coords:
+            da = assign_crs(da, crs)
+        return xr_reproject(da, geobox, resampling=resampling)
+
+    # catch the GEOSException: TopologyException error from shapely and raise a more informative error in case the user runs into
+    # https://github.com/opendatacube/odc-geo/issues/147
+    except shapely.errors.GEOSException as e:
+        raise RuntimeError(
+            "Error during reprojection. This can be caused by invalid geometries in the input data. "
+            "Try cleaning the geometries or using a different resampling method. If the input data contains dask-arrays, "
+            "consider using .compute() to convert them to in-memory arrays before reprojection."
+            "See https://github.com/opendatacube/odc-geo/issues/147 for more details."
+        ) from e
 
 
 def level_reproject(
