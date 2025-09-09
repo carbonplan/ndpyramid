@@ -151,7 +151,9 @@ def make_grid_pyramid(
         level_indices = list(range(levels))
 
     plevels = {
-        str(level): make_grid_ds(level, projection=projection, pixels_per_tile=pixels_per_tile).chunk(-1)
+        str(level): make_grid_ds(
+            level, projection=projection, pixels_per_tile=pixels_per_tile
+        ).chunk(-1)
         for level in level_indices
     }
     return xr.DataTree.from_dict(plevels)
@@ -281,7 +283,9 @@ def pyramid_regrid(
                 pixels_per_tile=pixels_per_tile,
             )
         else:
-            raise ValueError("must either provide a target_pyramid or number of levels / level_list")
+            raise ValueError(
+                "must either provide a target_pyramid or number of levels / level_list"
+            )
 
     # determine list of level indices from target_pyramid keys (excluding root if present)
     level_indices = sorted([int(k) for k in target_pyramid.keys() if k != "/"])
@@ -296,7 +300,7 @@ def pyramid_regrid(
     # multiscales spec
     projection_model = Projection(name=projection)
     save_kwargs = {
-    "levels": level_indices,
+        "levels": level_indices,
         "pixels_per_tile": pixels_per_tile,
         "projection": projection,
         "other_chunks": other_chunks,
@@ -361,7 +365,7 @@ def pyramid_regrid(
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid,
-    levels=level_indices,
+        levels=level_indices,
         other_chunks=other_chunks,
         pixels_per_tile=pixels_per_tile,
         projection=Projection(name=projection),

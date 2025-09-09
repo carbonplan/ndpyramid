@@ -2,9 +2,7 @@ import numpy as np
 import pytest
 from zarr.storage import MemoryStore
 
-from ndpyramid import (
-    pyramid_regrid,
-)
+from ndpyramid import pyramid_regrid
 from ndpyramid.regrid import generate_weights_pyramid, make_grid_ds
 from ndpyramid.testing import verify_bounds
 
@@ -56,7 +54,6 @@ def test_regridded_pyramid_with_weights(temperature, benchmark):
 
 @pytest.mark.parametrize("projection", ["web-mercator", "equidistant-cylindrical"])
 def test_make_grid_ds(projection, benchmark):
-
     grid = benchmark(lambda: make_grid_ds(0, pixels_per_tile=8, projection=projection))
     lon_vals = grid.lon_b.values
     assert np.all((lon_vals[-1, :] - lon_vals[0, :]) < 0.001)
