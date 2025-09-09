@@ -58,12 +58,6 @@ def pyramid_create(
         )
     }
 
-    # set up pyramid
-    plevels = {}
-
-    # pyramid data
-    for key, factor in enumerate(factors):
-        plevels[str(key)] = func(ds, factor, dims, **kwargs)
-
+    plevels = {str(key): func(ds, factor, dims, **kwargs) for key, factor in enumerate(factors)}
     plevels["/"] = xr.Dataset(attrs=attrs)
     return xr.DataTree.from_dict(plevels)

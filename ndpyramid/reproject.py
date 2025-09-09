@@ -3,27 +3,34 @@ from __future__ import annotations  # noqa: F401
 from collections import defaultdict
 
 import numpy as np
+import shapely.errors
 import xarray as xr
-from rasterio.warp import Resampling
+from odc.geo import CRS as OdcCRS
+from odc.geo.geobox import GeoBox
+from odc.geo.xr import assign_crs, xr_reproject
 
 from .common import Projection, ProjectionOptions
-from .utils import (
-    add_metadata_and_zarr_encoding,
-    get_levels,
-    get_version,
-    multiscales_template,
-)
+from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
 
 
 def _da_reproject(da: xr.DataArray, *, dim: int, crs: str, resampling: str, transform):
-    if da.encoding.get("_FillValue") is None and np.issubdtype(da.dtype, np.floating):
-        da.encoding["_FillValue"] = np.nan
-    return da.rio.reproject(
-        crs,
-        resampling=resampling,
-        shape=(dim, dim),
-        transform=transform,
-    )
+    try:
+        if da.encoding.get("_FillValue") is None and np.issubdtype(da.dtype, np.floating):
+            da.encoding["_FillValue"] = np.nan
+        geobox = GeoBox((dim, dim), transform, OdcCRS(crs))
+        if "spatial_ref" not in da.coords:
+            da = assign_crs(da, crs)
+        return xr_reproject(da, geobox, resampling=resampling)
+
+    # catch the GEOSException: TopologyException error from shapely and raise a more informative error in case the user runs into
+    # https://github.com/opendatacube/odc-geo/issues/147
+    except shapely.errors.GEOSException as e:
+        raise RuntimeError(
+            "Error during reprojection. This can be caused by invalid geometries in the input data. "
+            "Try cleaning the geometries or using a different resampling method. If the input data contains dask-arrays, "
+            "consider using .compute() to convert them to in-memory arrays before reprojection. "
+            "See https://github.com/opendatacube/odc-geo/issues/147 for more details."
+        ) from e
 
 
 def level_reproject(
@@ -33,7 +40,7 @@ def level_reproject(
     level: int,
     pixels_per_tile: int = 128,
     resampling: str | dict = "average",
-    extra_dim: str = None,
+    extra_dim: str | None = None,
     clear_attrs: bool = False,
 ) -> xr.Dataset:
     """Create a level of a multiscale pyramid of a dataset via reprojection.
@@ -49,7 +56,7 @@ def level_reproject(
     pixels_per_tile : int, optional
         Number of pixels per tile
     resampling : dict
-        Rasterio warp resampling method to use. Keys are variable names and values are warp resampling methods.
+        Resampling method to use. Keys are variable names and values are odc-geo supported methods.
     extra_dim : str, optional
         The name of the extra dimension to iterate over. Default is None.
     clear_attrs : bool, False
@@ -109,7 +116,7 @@ def level_reproject(
                     da.sel({extra_dim: index}),
                     dim=dim,
                     crs=projection_model._crs,
-                    resampling=Resampling[resampling_dict[k]],
+                    resampling=resampling_dict[k],
                     transform=dst_transform,
                 )
                 da_all.append(da_reprojected)
@@ -120,7 +127,7 @@ def level_reproject(
                 da,
                 dim=dim,
                 crs=projection_model._crs,
-                resampling=Resampling[resampling_dict[k]],
+                resampling=resampling_dict[k],
                 transform=dst_transform,
             )
     ds_level.attrs["multiscales"] = attrs["multiscales"]
@@ -131,11 +138,11 @@ def pyramid_reproject(
     ds: xr.Dataset,
     *,
     projection: ProjectionOptions = "web-mercator",
-    levels: int = None,
+    levels: int | None = None,
     pixels_per_tile: int = 128,
-    other_chunks: dict = None,
+    other_chunks: dict | None = None,
     resampling: str | dict = "average",
-    extra_dim: str = None,
+    extra_dim: str | None = None,
     clear_attrs: bool = False,
 ) -> xr.DataTree:
     """Create a multiscale pyramid of a dataset via reprojection.
@@ -154,8 +161,7 @@ def pyramid_reproject(
     other_chunks : dict
         Chunks for non-spatial dims to pass to :py:meth:`~xr.Dataset.chunk`. Default is None
     resampling : str or dict, optional
-        Rasterio warp resampling method to use. Default is 'average'.
-        If a dict, keys are variable names and values are warp resampling methods.
+        Resampling method to use. Default is 'average'. If a dict, keys are variable names and values are resampling methods.
     extra_dim : str, optional
         The name of the extra dimension to iterate over. Default is None.
     clear_attrs : bool, False
@@ -191,12 +197,8 @@ def pyramid_reproject(
         )
     }
 
-    # set up pyramid
-    plevels = {}
-
-    # pyramid data
-    for level in range(levels):
-        plevels[str(level)] = level_reproject(
+    plevels = {
+        str(level): level_reproject(
             ds,
             projection=projection,
             level=level,
@@ -205,7 +207,8 @@ def pyramid_reproject(
             extra_dim=extra_dim,
             clear_attrs=clear_attrs,
         )
-
+        for level in range(levels)
+    }
     # create the final multiscale pyramid
     plevels["/"] = xr.Dataset(attrs=attrs)
     pyramid = xr.DataTree.from_dict(plevels)
