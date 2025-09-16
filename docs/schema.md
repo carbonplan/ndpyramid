@@ -91,3 +91,21 @@ In addition to following the quadtree pyramid structure and metadata schema, the
   ```
 
 We recommend exploring the [`@carbonplan/maps` repository](https://github.com/carbonplan/maps), [`@carbonplan/maps` documentation](https://docs.carbonplan.org/maps), and [Zarr visualization report](https://nasa-impact.github.io/zarr-visualization-report/) for more information about CarbonPlan's approach to interactive multi-dimensional data-driven web maps.
+
+## Selecting specific levels
+
+Starting with version 0.5.0 you can generate only a subset of zoom levels when using `pyramid_reproject` or `pyramid_resample` or `pyramid_regrid` by passing an explicit `level_list` instead of `levels`:
+
+```python
+from ndpyramid import pyramid_reproject
+
+# Only build zoom level 5
+pyr = pyramid_reproject(ds, level_list=[5])
+
+# Build a sparse pyramid containing zoom levels 2, 4, and 6
+pyr_sparse = pyramid_reproject(ds, level_list=[2, 4, 6])
+
+
+```
+
+The resulting multiscales metadata stores only the requested levels. This can save compute and memory when you only need high zoom levels (similar to workflows with tools like Tippecanoe where you may target a specific max zoom). Downstream consumers that assume continuity of levels (0..N-1) should instead inspect the `multiscales[0]['datasets']` list.

@@ -2,9 +2,7 @@ import numpy as np
 import pytest
 from zarr.storage import MemoryStore
 
-from ndpyramid import (
-    pyramid_regrid,
-)
+from ndpyramid import pyramid_regrid
 from ndpyramid.regrid import generate_weights_pyramid, make_grid_ds
 from ndpyramid.testing import verify_bounds
 
@@ -56,7 +54,6 @@ def test_regridded_pyramid_with_weights(temperature, benchmark):
 
 @pytest.mark.parametrize("projection", ["web-mercator", "equidistant-cylindrical"])
 def test_make_grid_ds(projection, benchmark):
-
     grid = benchmark(lambda: make_grid_ds(0, pixels_per_tile=8, projection=projection))
     lon_vals = grid.lon_b.values
     assert np.all((lon_vals[-1, :] - lon_vals[0, :]) < 0.001)
@@ -78,3 +75,19 @@ def test_generate_weights_pyramid(temperature, levels, method, benchmark):
     assert weights_pyramid.ds.attrs["regrid_method"] == method
     assert set(weights_pyramid["0"].ds.data_vars) == {"S", "col", "row"}
     assert "n_in" in weights_pyramid["0"].ds.attrs and "n_out" in weights_pyramid["0"].ds.attrs
+
+
+def test_regridded_pyramid_sparse_levels(temperature):
+    pytest.importorskip("xesmf")
+    ds = temperature.isel(time=slice(0, 3))
+    sparse_levels = [1, 3]
+    pyramid = pyramid_regrid(ds, level_list=sparse_levels, parallel_weights=False)
+    # DataTree keys exclude root
+    assert set(pyramid.keys()) == {"1", "3"}
+    datasets_meta = pyramid.ds.attrs["multiscales"][0]["datasets"]
+    assert [d["level"] for d in datasets_meta] == sparse_levels
+    # verify dimension sizes scale as expected
+    pixels_per_tile = datasets_meta[0]["pixels_per_tile"]
+    for lvl in sparse_levels:
+        assert pyramid[str(lvl)].ds.dims["x"] == pixels_per_tile * 2**lvl
+        assert pyramid[str(lvl)].ds.dims["y"] == pixels_per_tile * 2**lvl

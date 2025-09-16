@@ -3,6 +3,7 @@ from __future__ import annotations  # noqa: F401
 import typing
 import warnings
 from collections import defaultdict
+from collections.abc import Sequence
 
 import numpy as np
 import xarray as xr
@@ -209,6 +210,7 @@ def pyramid_resample(
     y: str,
     projection: ProjectionOptions = "web-mercator",
     levels: int | None = None,
+    level_list: Sequence[int] | None = None,
     pixels_per_tile: int = 128,
     other_chunks: dict | None = None,
     resampling: ResamplingOptions | dict = "bilinear",
@@ -227,8 +229,9 @@ def pyramid_resample(
     projection : str, optional
         The projection to use. Default is ``web-mercator``.
     levels : int, optional
-        The number of levels to create. If None, the number of levels is
-        determined by the number of tiles in the dataset.
+        Number of contiguous levels starting at 0 to create. Mutually exclusive with ``level_list``.
+    level_list : Sequence[int], optional
+        Explicit list of zoom levels to build (e.g. ``[4]``). Mutually exclusive with ``levels``.
     pixels_per_tile : int, optional
         Number of pixels per tile, by default 128
     other_chunks : dict
@@ -252,12 +255,18 @@ def pyramid_resample(
     ``Ndpyramid`` and ``pyresample`` do not check the validity of these assumptions to improve performance.
 
     """
-    if not levels:
-        levels = get_levels(ds)
-    save_kwargs = {"levels": levels, "pixels_per_tile": pixels_per_tile}
+    if levels is not None and level_list is not None:
+        raise ValueError("Specify only one of 'levels' or 'level_list'.")
+    if level_list is not None:
+        level_indices = sorted({int(i) for i in level_list})
+    else:
+        if not levels:
+            levels = get_levels(ds)
+        level_indices = list(range(int(levels)))
+    save_kwargs = {"levels": level_indices, "pixels_per_tile": pixels_per_tile}
     attrs = {
         "multiscales": multiscales_template(
-            datasets=[{"path": str(i)} for i in range(levels)],
+            datasets=[{"path": str(i)} for i in level_indices],
             type="reduce",
             method="pyramid_resample",
             version=get_version(),
@@ -277,7 +286,7 @@ def pyramid_resample(
             resampling=resampling,
             clear_attrs=clear_attrs,
         )
-        for level in range(levels)
+        for level in level_indices
     }
     # create the final multiscale pyramid
     plevels["/"] = xr.Dataset(attrs=attrs)
@@ -287,7 +296,7 @@ def pyramid_resample(
 
     pyramid = add_metadata_and_zarr_encoding(
         pyramid,
-        levels=levels,
+        levels=level_indices,
         pixels_per_tile=pixels_per_tile,
         other_chunks=other_chunks,
         projection=projection_model,
