@@ -43,7 +43,7 @@
         "ndpyramid[dask,jupyter,xesmf]",
         "scipy",
     ]
-    dask = ["dask", "pyresample"]
+    dask = ["dask", "pyarrow", "pyresample"]
     jupyter = [
         'ipython',
         'ipytree>=0.2.2',
