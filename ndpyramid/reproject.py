@@ -8,7 +8,7 @@ import shapely.errors
 import xarray as xr
 from odc.geo import CRS as OdcCRS
 from odc.geo.geobox import GeoBox
-from odc.geo.xr import assign_crs, xr_reproject
+from odc.geo.xr import xr_reproject
 
 from .common import Projection, ProjectionOptions
 from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
@@ -33,12 +33,6 @@ def _da_reproject(da: xr.DataArray, *, geobox: GeoBox, resampling: str):
             enc = dict(da_local.encoding)
             enc["_FillValue"] = np.nan
             da_local.encoding = enc
-
-        # Ensure CRS assigned (dataset-level assignment preferred; this is a safety net)
-        if "spatial_ref" not in da_local.coords:
-            if geobox.crs is None:
-                raise ValueError("GeoBox has no CRS; cannot assign CRS to DataArray.")
-            da_local = assign_crs(da_local, geobox.crs)
 
         return xr_reproject(da_local, geobox, resampling=resampling)
 
@@ -104,8 +98,8 @@ def level_reproject(
     dim = 2**level * pixels_per_tile
     dst_transform = projection_model.transform(dim=dim)
     # Build CRS/GeoBox once per level and reuse
-    crs_odc = OdcCRS(projection_model._crs)
-    geobox = GeoBox((dim, dim), dst_transform, crs_odc)
+    dst_crs_odc = OdcCRS(projection_model._crs)
+    dst_geobox = GeoBox((dim, dim), dst_transform, dst_crs_odc)
     save_kwargs = {
         "level": level,
         "pixels_per_tile": pixels_per_tile,
@@ -136,7 +130,7 @@ def level_reproject(
     for k, da in ds.items():
         da_reprojected = _da_reproject(
             da,
-            geobox=geobox,
+            geobox=dst_geobox,
             resampling=resampling_dict[k],
         )
         if clear_attrs:
