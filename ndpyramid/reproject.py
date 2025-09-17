@@ -14,14 +14,33 @@ from .common import Projection, ProjectionOptions
 from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
 
 
-def _da_reproject(da: xr.DataArray, *, dim: int, crs: str, resampling: str, transform):
+def _da_reproject(da: xr.DataArray, *, geobox: GeoBox, resampling: str):
+    """Reproject a DataArray to a given GeoBox.
+
+    Notes
+    -----
+    - Avoids rebuilding CRS/GeoBox per call.
+    - Does not mutate the source DataArray; encodings are applied on a shallow copy.
+    """
     try:
-        if da.encoding.get("_FillValue") is None and np.issubdtype(da.dtype, np.floating):
-            da.encoding["_FillValue"] = np.nan
-        geobox = GeoBox((dim, dim), transform, OdcCRS(crs))
-        if "spatial_ref" not in da.coords:
-            da = assign_crs(da, crs)
-        return xr_reproject(da, geobox, resampling=resampling)
+        # Work on a shallow copy to avoid mutating caller's encoding/attrs
+        da_local = da.copy(deep=False)
+
+        # Ensure a sensible fill value for floating types (used by rasterio/odc-geo during warp)
+        if da_local.encoding.get("_FillValue") is None and np.issubdtype(
+            da_local.dtype, np.floating
+        ):
+            enc = dict(da_local.encoding)
+            enc["_FillValue"] = np.nan
+            da_local.encoding = enc
+
+        # Ensure CRS assigned (dataset-level assignment preferred; this is a safety net)
+        if "spatial_ref" not in da_local.coords:
+            if geobox.crs is None:
+                raise ValueError("GeoBox has no CRS; cannot assign CRS to DataArray.")
+            da_local = assign_crs(da_local, geobox.crs)
+
+        return xr_reproject(da_local, geobox, resampling=resampling)
 
     # catch the GEOSException: TopologyException error from shapely and raise a more informative error in case the user runs into
     # https://github.com/opendatacube/odc-geo/issues/147
@@ -56,10 +75,11 @@ def level_reproject(
         The level of the pyramid to create.
     pixels_per_tile : int, optional
         Number of pixels per tile
-    resampling : dict
-        Resampling method to use. Keys are variable names and values are odc-geo supported methods.
+    resampling : str or dict
+        Resampling method to use. If a dict, keys are variable names and values are odc-geo supported
+        methods. A string applies to all variables.
     extra_dim : str, optional
-        The name of the extra dimension to iterate over. Default is None.
+        Deprecated/ignored. Extra dimensions are handled natively by odc-geo/xarray broadcasting.
     clear_attrs : bool, False
         Clear the attributes of the DataArrays within the multiscale level. Default is False.
 
@@ -73,9 +93,19 @@ def level_reproject(
     Pyramid generation by level is experimental and subject to change.
 
     """
+
+    # Ensure CRS is present at the dataset level
+    # raise error if not present, as this is required for reprojection
+    if "spatial_ref" not in ds.coords:
+        raise ValueError(
+            "Source Dataset has no 'spatial_ref' coordinate. Please assign a CRS to the dataset before reprojection. You can use the 'assign_crs' function from odc.geo.xr."
+        )
     projection_model = Projection(name=projection)
     dim = 2**level * pixels_per_tile
     dst_transform = projection_model.transform(dim=dim)
+    # Build CRS/GeoBox once per level and reuse
+    crs_odc = OdcCRS(projection_model._crs)
+    geobox = GeoBox((dim, dim), dst_transform, crs_odc)
     save_kwargs = {
         "level": level,
         "pixels_per_tile": pixels_per_tile,
@@ -101,36 +131,17 @@ def level_reproject(
     else:
         resampling_dict = resampling
 
-    # create the data array for each level
+    # create the data array for each level (broadcast over extra dims; no Python loop)
     ds_level = xr.Dataset(attrs=ds.attrs)
     for k, da in ds.items():
+        da_reprojected = _da_reproject(
+            da,
+            geobox=geobox,
+            resampling=resampling_dict[k],
+        )
         if clear_attrs:
-            da.attrs.clear()
-        if len(da.shape) == 4:
-            # if extra_dim is not specified, raise an error
-            if extra_dim is None:
-                raise ValueError("must specify 'extra_dim' to iterate over 4d data")
-            da_all = []
-            for index in ds[extra_dim]:
-                # reproject each index of the 4th dimension
-                da_reprojected = _da_reproject(
-                    da.sel({extra_dim: index}),
-                    dim=dim,
-                    crs=projection_model._crs,
-                    resampling=resampling_dict[k],
-                    transform=dst_transform,
-                )
-                da_all.append(da_reprojected)
-            ds_level[k] = xr.concat(da_all, ds[extra_dim])
-        else:
-            # if the data array is not 4D, just reproject it
-            ds_level[k] = _da_reproject(
-                da,
-                dim=dim,
-                crs=projection_model._crs,
-                resampling=resampling_dict[k],
-                transform=dst_transform,
-            )
+            da_reprojected.attrs.clear()
+        ds_level[k] = da_reprojected
     ds_level.attrs["multiscales"] = attrs["multiscales"]
     return ds_level
 
@@ -169,7 +180,7 @@ def pyramid_reproject(
     resampling : str or dict, optional
         Resampling method to use. Default is 'average'. If a dict, keys are variable names and values are resampling methods.
     extra_dim : str, optional
-        The name of the extra dimension to iterate over. Default is None.
+        Deprecated/ignored. Extra dimensions are handled natively by odc-geo/xarray broadcasting.
     clear_attrs : bool, False
         Clear the attributes of the DataArrays within the multiscale pyramid. Default is False.
 
