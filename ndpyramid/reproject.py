@@ -3,48 +3,13 @@ from __future__ import annotations  # noqa: F401
 from collections import defaultdict
 from collections.abc import Sequence
 
-import numpy as np
 import shapely.errors
 import xarray as xr
 from odc.geo import CRS as OdcCRS
-from odc.geo.geobox import GeoBox
 from odc.geo.xr import xr_reproject
 
 from .common import Projection, ProjectionOptions
 from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
-
-
-def _da_reproject(da: xr.DataArray, *, geobox: GeoBox, resampling: str):
-    """Reproject a DataArray to a given GeoBox.
-
-    Notes
-    -----
-    - Avoids rebuilding CRS/GeoBox per call.
-    - Does not mutate the source DataArray; encodings are applied on a shallow copy.
-    """
-    try:
-        # Work on a shallow copy to avoid mutating caller's encoding/attrs
-        da_local = da.copy(deep=False)
-
-        # Ensure a sensible fill value for floating types (used by rasterio/odc-geo during warp)
-        if da_local.encoding.get("_FillValue") is None and np.issubdtype(
-            da_local.dtype, np.floating
-        ):
-            enc = dict(da_local.encoding)
-            enc["_FillValue"] = np.nan
-            da_local.encoding = enc
-
-        return xr_reproject(da_local, geobox, resampling=resampling)
-
-    # catch the GEOSException: TopologyException error from shapely and raise a more informative error in case the user runs into
-    # https://github.com/opendatacube/odc-geo/issues/147
-    except shapely.errors.GEOSException as e:
-        raise RuntimeError(
-            "Error during reprojection. This can be caused by invalid geometries in the input data. "
-            "Try cleaning the geometries or using a different resampling method. If the input data contains dask-arrays, "
-            "consider using .compute() to convert them to in-memory arrays before reprojection. "
-            "See https://github.com/opendatacube/odc-geo/issues/147 for more details."
-        ) from e
 
 
 def level_reproject(
@@ -56,6 +21,7 @@ def level_reproject(
     resampling: str | dict = "average",
     extra_dim: str | None = None,
     clear_attrs: bool = False,
+    odc_geo_xr_reproject_kwargs: dict | None = None,
 ) -> xr.Dataset:
     """Create a level of a multiscale pyramid of a dataset via reprojection.
 
@@ -76,6 +42,8 @@ def level_reproject(
         Deprecated/ignored. Extra dimensions are handled natively by odc-geo/xarray broadcasting.
     clear_attrs : bool, False
         Clear the attributes of the DataArrays within the multiscale level. Default is False.
+    odc_geo_xr_reproject_kwargs : dict, optional
+        Additional keyword arguments to pass to `odc.geo.xr.xr_reproject`. Default is None
 
     Returns
     -------
@@ -95,11 +63,8 @@ def level_reproject(
             "Source Dataset has no 'spatial_ref' coordinate. Please assign a CRS to the dataset before reprojection. You can use the 'assign_crs' function from odc.geo.xr."
         )
     projection_model = Projection(name=projection)
-    dim = 2**level * pixels_per_tile
-    dst_transform = projection_model.transform(dim=dim)
     # Build CRS/GeoBox once per level and reuse
     dst_crs_odc = OdcCRS(projection_model._crs)
-    dst_geobox = GeoBox((dim, dim), dst_transform, dst_crs_odc)
     save_kwargs = {
         "level": level,
         "pixels_per_tile": pixels_per_tile,
@@ -127,12 +92,24 @@ def level_reproject(
 
     # create the data array for each level (broadcast over extra dims; no Python loop)
     ds_level = xr.Dataset(attrs=ds.attrs)
+
     for k, da in ds.items():
-        da_reprojected = _da_reproject(
-            da,
-            geobox=dst_geobox,
-            resampling=resampling_dict[k],
-        )
+        try:
+            da_reprojected = xr_reproject(
+                da,
+                dst_crs_odc,
+                resampling=resampling_dict[k],
+                **(odc_geo_xr_reproject_kwargs or {}),
+            )
+        # catch the GEOSException: TopologyException error from shapely and raise a more informative error in case the user runs into
+        # https://github.com/opendatacube/odc-geo/issues/147
+        except shapely.errors.GEOSException as e:
+            raise RuntimeError(
+                "Error during reprojection. This can be caused by invalid geometries in the input data. "
+                "Try cleaning the geometries or using a different resampling method. If the input data contains dask-arrays, "
+                "consider using .compute() to convert them to in-memory arrays before reprojection. "
+                "See https://github.com/opendatacube/odc-geo/issues/147 for more details."
+            ) from e
         if clear_attrs:
             da_reprojected.attrs.clear()
         ds_level[k] = da_reprojected
@@ -151,6 +128,7 @@ def pyramid_reproject(
     resampling: str | dict = "average",
     extra_dim: str | None = None,
     clear_attrs: bool = False,
+    odc_geo_xr_reproject_kwargs: dict | None = None
 ) -> xr.DataTree:
     """Create a multiscale pyramid of a dataset via reprojection.
 
@@ -177,6 +155,8 @@ def pyramid_reproject(
         Deprecated/ignored. Extra dimensions are handled natively by odc-geo/xarray broadcasting.
     clear_attrs : bool, False
         Clear the attributes of the DataArrays within the multiscale pyramid. Default is False.
+    odc_geo_xr_reproject_kwargs : dict, optional
+        Additional keyword arguments to pass to `odc.geo.xr.xr_reproject`. Default is None
 
     Returns
     -------
@@ -204,6 +184,7 @@ def pyramid_reproject(
         "resampling": resampling,
         "extra_dim": extra_dim,
         "clear_attrs": clear_attrs,
+        "odc_geo_xr_reproject_kwargs": odc_geo_xr_reproject_kwargs,
     }
     attrs = {
         "multiscales": multiscales_template(
@@ -226,6 +207,7 @@ def pyramid_reproject(
             resampling=resampling,
             extra_dim=extra_dim,
             clear_attrs=clear_attrs,
+            odc_geo_xr_reproject_kwargs=odc_geo_xr_reproject_kwargs,
         )
         for level in level_indices
     }
