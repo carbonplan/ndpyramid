@@ -2,6 +2,7 @@ from __future__ import annotations  # noqa: F401
 
 from collections import defaultdict
 from collections.abc import Sequence
+from typing import cast
 
 import numpy as np
 import shapely.errors
@@ -11,6 +12,7 @@ from odc.geo.geobox import GeoBox
 from odc.geo.xr import xr_reproject
 
 from .common import Projection, ProjectionOptions
+from .layout import BBox, PyramidLayout
 from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
 
 
@@ -56,6 +58,9 @@ def level_reproject(
     resampling: str | dict = "average",
     extra_dim: str | None = None,
     clear_attrs: bool = False,
+    # extent-aware overrides
+    geobox: GeoBox | None = None,
+    layout_metadata: dict | None = None,
 ) -> xr.Dataset:
     """Create a level of a multiscale pyramid of a dataset via reprojection.
 
@@ -95,11 +100,14 @@ def level_reproject(
             "Source Dataset has no 'spatial_ref' coordinate. Please assign a CRS to the dataset before reprojection. You can use the 'assign_crs' function from odc.geo.xr."
         )
     projection_model = Projection(name=projection)
-    dim = 2**level * pixels_per_tile
-    dst_transform = projection_model.transform(dim=dim)
-    # Build CRS/GeoBox once per level and reuse
-    dst_crs_odc = OdcCRS(projection_model._crs)
-    dst_geobox = GeoBox((dim, dim), dst_transform, dst_crs_odc)
+    if geobox is None:
+        dim = 2**level * pixels_per_tile
+        dst_transform = projection_model.transform(dim=dim)
+        # Build CRS/GeoBox once per level and reuse
+        dst_crs_odc = OdcCRS(projection_model._crs)
+        dst_geobox = GeoBox((dim, dim), dst_transform, dst_crs_odc)
+    else:
+        dst_geobox = geobox
     save_kwargs = {
         "level": level,
         "pixels_per_tile": pixels_per_tile,
@@ -109,9 +117,13 @@ def level_reproject(
         "clear_attrs": clear_attrs,
     }
 
+    datasets_meta = {"path": ".", "level": level, "crs": projection_model._crs}
+    if layout_metadata is not None:
+        # store under 'geospatial' to avoid collisions
+        datasets_meta["geospatial"] = layout_metadata
     attrs = {
         "multiscales": multiscales_template(
-            datasets=[{"path": ".", "level": level, "crs": projection_model._crs}],
+            datasets=[datasets_meta],
             type="reduce",
             method="pyramid_reproject",
             version=get_version(),
@@ -151,6 +163,10 @@ def pyramid_reproject(
     resampling: str | dict = "average",
     extra_dim: str | None = None,
     clear_attrs: bool = False,
+    # extent-aware options
+    crop: bool = False,
+    extent: tuple[float, float, float, float] | None = None,
+    extent_crs: str | None = None,  # reserved for future (currently assumes target projection)
 ) -> xr.DataTree:
     """Create a multiscale pyramid of a dataset via reprojection.
 
@@ -178,10 +194,41 @@ def pyramid_reproject(
     clear_attrs : bool, False
         Clear the attributes of the DataArrays within the multiscale pyramid. Default is False.
 
+    crop : bool, optional
+        If True, build only tiles intersecting the data footprint (extent-aware
+        / cropped mode). The resulting per-level arrays are rectangular
+        sub-grids aligned to the global tile matrix. Default False preserves
+        legacy full-world behavior.
+    extent : tuple(float, float, float, float), optional
+        (xmin, ymin, xmax, ymax) of the desired crop in the *target* projection
+        (unless ``extent_crs`` is implemented in a later version). If omitted
+        and ``crop=True`` the bounding box is inferred from the dataset's x/y
+        coordinates.
+    extent_crs : str, optional
+        Reserved for future use; will allow specifying ``extent`` in a
+        different CRS. Currently ignored.
+
     Returns
     -------
     xr.DataTree
         The multiscale pyramid.
+
+    Notes
+    -----
+    When ``crop=True`` each dataset entry within
+    ``pyramid.ds.attrs['multiscales'][0]['datasets']`` includes a nested
+    ``geospatial`` object containing:
+
+    - tile_offset: [tile_x0, tile_y0]
+    - tile_shape: [tiles_x, tiles_y]
+    - shape_px: [height_px, width_px]
+    - resolution: [res_x, res_y]
+    - extent_full / extent_data
+    - transform: affine coefficients [a,b,c,d,e,f]
+    - layout: "cropped"
+
+    These enable clients to reconstruct global tile coordinates without
+    materializing empty world pixels.
 
     """
     if levels is not None and level_list is not None:
@@ -204,6 +251,7 @@ def pyramid_reproject(
         "resampling": resampling,
         "extra_dim": extra_dim,
         "clear_attrs": clear_attrs,
+        "crop": crop,
     }
     attrs = {
         "multiscales": multiscales_template(
@@ -217,8 +265,37 @@ def pyramid_reproject(
         )
     }
 
-    plevels = {
-        str(level): level_reproject(
+    # extent-aware preparation
+    layout: PyramidLayout | None = None
+    layout_bbox: BBox | None = None
+    if crop:
+        projection_model = Projection(name=projection)
+        world_extent = projection_model._area_extent  # full extent
+        layout = PyramidLayout(
+            world_extent=world_extent, pixels_per_tile=pixels_per_tile, crs=projection_model._crs
+        )
+        if extent is None:
+            # infer from dataset coordinates (min/max of x,y), assuming already reprojectable
+            if not {"x", "y"}.issubset(ds.coords):
+                raise ValueError("Cannot infer extent: dataset missing 'x' and 'y' coordinates")
+            xmin = float(ds.x.min())
+            xmax = float(ds.x.max())
+            ymin = float(ds.y.min())
+            ymax = float(ds.y.max())
+            layout_bbox = BBox(xmin, ymin, xmax, ymax)
+        else:
+            # TODO: add CRS transformation if extent_crs provided
+            layout_bbox = BBox(*extent)
+
+    plevels: dict[str, xr.Dataset] = {}
+    for level in level_indices:
+        geobox: GeoBox | None = None
+        meta: dict | None = None
+        if crop and layout and layout_bbox:
+            out = layout.level_from_bbox(level=level, bbox=layout_bbox)
+            geobox = cast(GeoBox, out["geobox"])  # type: ignore[arg-type]
+            meta = cast(dict, out["metadata"])  # type: ignore[arg-type]
+        plevels[str(level)] = level_reproject(
             ds,
             projection=projection,
             level=level,
@@ -226,9 +303,9 @@ def pyramid_reproject(
             resampling=resampling,
             extra_dim=extra_dim,
             clear_attrs=clear_attrs,
+            geobox=geobox,
+            layout_metadata=meta,
         )
-        for level in level_indices
-    }
     # create the final multiscale pyramid
     plevels["/"] = xr.Dataset(attrs=attrs)
     pyramid = xr.DataTree.from_dict(plevels)
