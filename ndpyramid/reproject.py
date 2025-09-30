@@ -10,6 +10,8 @@ import xarray as xr
 from odc.geo import CRS as OdcCRS
 from odc.geo.geobox import GeoBox
 from odc.geo.xr import xr_reproject
+from pyproj import CRS as PyCRS
+from pyproj import Transformer
 
 from .common import Projection, ProjectionOptions
 from .layout import BBox, PyramidLayout
@@ -166,7 +168,7 @@ def pyramid_reproject(
     # extent-aware options
     crop: bool = False,
     extent: tuple[float, float, float, float] | None = None,
-    extent_crs: str | None = None,  # reserved for future (currently assumes target projection)
+    extent_crs: str | None = None,
 ) -> xr.DataTree:
     """Create a multiscale pyramid of a dataset via reprojection.
 
@@ -205,8 +207,10 @@ def pyramid_reproject(
         and ``crop=True`` the bounding box is inferred from the dataset's x/y
         coordinates.
     extent_crs : str, optional
-        Reserved for future use; will allow specifying ``extent`` in a
-        different CRS. Currently ignored.
+        CRS of the supplied ``extent``. If provided and different from the
+        target projection CRS, it is transformed to the target CRS before
+        cropping. If omitted, ``extent`` (when provided) is interpreted in the
+        target projection.
 
     Returns
     -------
@@ -274,18 +278,63 @@ def pyramid_reproject(
         layout = PyramidLayout(
             world_extent=world_extent, pixels_per_tile=pixels_per_tile, crs=projection_model._crs
         )
+
+        target_crs = PyCRS.from_string(projection_model._crs)
+
+        def _infer_source_bbox() -> tuple[float, float, float, float]:
+            # Try odc.geobox extent first if present (more robust than coord min/max)
+            try:
+                geobox = ds.odc.geobox  # type: ignore[attr-defined]
+                return geobox.boundingbox.bbox
+            except Exception:  # pragma: no cover - fallback path
+                pass
+            if {"x", "y"}.issubset(ds.coords):
+                return (
+                    float(ds.x.min()),
+                    float(ds.y.min()),
+                    float(ds.x.max()),
+                    float(ds.y.max()),
+                )
+            raise ValueError(
+                "Cannot infer extent: dataset missing 'x'/'y' coords and no odc.geobox available"
+            )
+
         if extent is None:
-            # infer from dataset coordinates (min/max of x,y), assuming already reprojectable
-            if not {"x", "y"}.issubset(ds.coords):
-                raise ValueError("Cannot infer extent: dataset missing 'x' and 'y' coordinates")
-            xmin = float(ds.x.min())
-            xmax = float(ds.x.max())
-            ymin = float(ds.y.min())
-            ymax = float(ds.y.max())
-            layout_bbox = BBox(xmin, ymin, xmax, ymax)
+            # infer from source CRS (dataset CRS) and transform to target CRS if different
+            if "spatial_ref" not in ds.coords:
+                raise ValueError(
+                    "Dataset missing 'spatial_ref' so source CRS unknown for extent inference."
+                )
+            source_crs_wkt = str(ds.spatial_ref)
+            source_crs = PyCRS.from_string(source_crs_wkt)
+            xmin_s, ymin_s, xmax_s, ymax_s = _infer_source_bbox()
+            if source_crs == target_crs:
+                xmin_t, ymin_t, xmax_t, ymax_t = xmin_s, ymin_s, xmax_s, ymax_s
+            else:
+                transformer = Transformer.from_crs(source_crs, target_crs, always_xy=True)
+                # project four corners, then take min/max (safer for non-linear projections)
+                xs = [xmin_s, xmin_s, xmax_s, xmax_s]
+                ys = [ymin_s, ymax_s, ymin_s, ymax_s]
+                tx, ty = transformer.transform(xs, ys)
+                xmin_t = float(min(tx))
+                xmax_t = float(max(tx))
+                ymin_t = float(min(ty))
+                ymax_t = float(max(ty))
+            layout_bbox = BBox(xmin_t, ymin_t, xmax_t, ymax_t)
         else:
-            # TODO: add CRS transformation if extent_crs provided
-            layout_bbox = BBox(*extent)
+            # Interpret extent in extent_crs (if provided) else target
+            if extent_crs and PyCRS.from_string(extent_crs) != target_crs:
+                transformer = Transformer.from_crs(
+                    PyCRS.from_string(extent_crs), target_crs, always_xy=True
+                )
+                xs = [extent[0], extent[2]]
+                ys = [extent[1], extent[3]]
+                tx, ty = transformer.transform(xs, ys)
+                xmin_t, xmax_t = float(min(tx)), float(max(tx))
+                ymin_t, ymax_t = float(min(ty)), float(max(ty))
+                layout_bbox = BBox(xmin_t, ymin_t, xmax_t, ymax_t)
+            else:
+                layout_bbox = BBox(*extent)
 
     plevels: dict[str, xr.Dataset] = {}
     for level in level_indices:
