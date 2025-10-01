@@ -72,6 +72,10 @@ pyramid = pyramid_reproject(ds, levels=2)
 
 # write the pyramid to zarr
 pyramid.to_zarr('./path/to/write', zarr_format=2, consolidated=True, mode="w")
+
+# build only tiles intersecting the data footprint (experimental)
+cropped = pyramid_reproject(ds, levels=6, crop=True)
+cropped.to_zarr('./cropped-pyramid.zarr', mode='w', consolidated=True)
 ```
 
 See the docstrings and [API documentation](https://ndpyramid.readthedocs.io/en/latest/api.html) for more details about input parameters and options.
