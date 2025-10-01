@@ -246,5 +246,6 @@ def pyramid_reproject(
         pixels_per_tile=pixels_per_tile,
         other_chunks=other_chunks,
         projection=projection_model,
+        rechunk=False,  # Disable rechunking here so we can control it via xr_reproject_kwargs
     )
     return pyramid

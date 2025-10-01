@@ -146,6 +146,7 @@ def add_metadata_and_zarr_encoding(
     other_chunks: dict | None = None,
     pixels_per_tile: int = 128,
     projection: Projection | None = None,
+    rechunk: bool = True,
 ) -> xr.DataTree:
     """Postprocess data pyramid. Adds multiscales metadata and sets Zarr encoding
 
@@ -205,7 +206,8 @@ def add_metadata_and_zarr_encoding(
         pyramid.ds.attrs["multiscales"][0]["datasets"][pos]["pixels_per_tile"] = pixels_per_tile
         if projection:
             pyramid.ds.attrs["multiscales"][0]["datasets"][pos]["crs"] = projection._crs
-        pyramid[slevel].ds = pyramid[slevel].ds.chunk(chunks)
+        if rechunk:
+            pyramid[slevel].ds = pyramid[slevel].ds.chunk(chunks)
         pyramid[slevel].ds = set_zarr_encoding(
             pyramid[slevel].ds,
             codec_config={"id": "zlib", "level": 1},
