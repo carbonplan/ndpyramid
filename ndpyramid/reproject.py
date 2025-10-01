@@ -14,7 +14,9 @@ from .common import Projection, ProjectionOptions
 from .utils import add_metadata_and_zarr_encoding, get_levels, get_version, multiscales_template
 
 
-def _da_reproject(da: xr.DataArray, *, geobox: GeoBox, resampling: str):
+def _da_reproject(
+    da: xr.DataArray, *, geobox: GeoBox, resampling: str, xr_reproject_kwargs: dict | None = None
+) -> xr.DataArray:
     """Reproject a DataArray to a given GeoBox.
 
     Notes
@@ -22,6 +24,7 @@ def _da_reproject(da: xr.DataArray, *, geobox: GeoBox, resampling: str):
     - Avoids rebuilding CRS/GeoBox per call.
     - Does not mutate the source DataArray; encodings are applied on a shallow copy.
     """
+    xr_reproject_kwargs = xr_reproject_kwargs or {}
     try:
         # Work on a shallow copy to avoid mutating caller's encoding/attrs
         da_local = da.copy(deep=False)
@@ -34,7 +37,7 @@ def _da_reproject(da: xr.DataArray, *, geobox: GeoBox, resampling: str):
             enc["_FillValue"] = np.nan
             da_local.encoding = enc
 
-        return xr_reproject(da_local, geobox, resampling=resampling)
+        return xr_reproject(da_local, geobox, resampling=resampling, **xr_reproject_kwargs)
 
     # catch the GEOSException: TopologyException error from shapely and raise a more informative error in case the user runs into
     # https://github.com/opendatacube/odc-geo/issues/147
@@ -56,6 +59,7 @@ def level_reproject(
     resampling: str | dict = "average",
     extra_dim: str | None = None,
     clear_attrs: bool = False,
+    xr_reproject_kwargs: dict | None = None,
 ) -> xr.Dataset:
     """Create a level of a multiscale pyramid of a dataset via reprojection.
 
@@ -132,6 +136,7 @@ def level_reproject(
             da,
             geobox=dst_geobox,
             resampling=resampling_dict[k],
+            xr_reproject_kwargs=xr_reproject_kwargs,
         )
         if clear_attrs:
             da_reprojected.attrs.clear()
@@ -151,6 +156,7 @@ def pyramid_reproject(
     resampling: str | dict = "average",
     extra_dim: str | None = None,
     clear_attrs: bool = False,
+    xr_reproject_kwargs: dict | None = None,
 ) -> xr.DataTree:
     """Create a multiscale pyramid of a dataset via reprojection.
 
@@ -226,6 +232,7 @@ def pyramid_reproject(
             resampling=resampling,
             extra_dim=extra_dim,
             clear_attrs=clear_attrs,
+            xr_reproject_kwargs=xr_reproject_kwargs,
         )
         for level in level_indices
     }
