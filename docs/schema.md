@@ -109,3 +109,39 @@ pyr_sparse = pyramid_reproject(ds, level_list=[2, 4, 6])
 ```
 
 The resulting multiscales metadata stores only the requested levels. This can save compute and memory when you only need high zoom levels (similar to workflows with tools like Tippecanoe where you may target a specific max zoom). Downstream consumers that assume continuity of levels (0..N-1) should instead inspect the `multiscales[0]['datasets']` list.
+
+## Extent-aware (cropped) pyramids (experimental)
+
+Starting with version _experimental_, `pyramid_reproject` can generate _cropped_
+levels by passing `crop=True`. Instead of allocating the full world-sized
+square at each zoom, only the tiles intersecting the data footprint are
+produced. This dramatically reduces memory and computation for regional
+datasets (e.g., CONUS subsets) while preserving tile alignment.
+
+When cropping is enabled, each entry in `multiscales[0]['datasets']` gains a
+`geospatial` object containing:
+
+| Field         | Description                                                                 |
+| ------------- | --------------------------------------------------------------------------- |
+| `tile_offset` | `[tile_x0, tile_y0]` global slippy tile indices of the top-left stored tile |
+| `tile_shape`  | `[tiles_x, tiles_y]` number of tiles stored along x and y                   |
+| `shape_px`    | `[height_px, width_px]` pixel dimensions of the stored array                |
+| `resolution`  | `[res_x, res_y]` pixel size in projection units at this zoom level          |
+| `extent_full` | Full projection extent (world) in target CRS                                |
+| `extent_data` | Tight data bounding box before snap to tile grid                            |
+| `transform`   | Affine transform `[a,b,c,d,e,f]` mapping pixel -> CRS                       |
+| `layout`      | Always `"cropped"` for cropped levels                                       |
+
+All other metadata remain unchanged. Clients that are unaware of cropping
+simply observe smaller arrays; geo-aware clients combine `tile_offset`,
+`tile_shape`, and `pixels_per_tile` to place data in the global matrix.
+
+Limitations / notes:
+
+- `extent_crs` translation is reserved for future versions.
+- Edge pixels beyond the precise data bbox (due to outward tile snapping) may
+  contain nodata.
+- Currently only `pyramid_reproject` supports cropping.
+
+If you build tools on top of cropped pyramids, prefer reading the presence of
+`geospatial.layout == 'cropped'` rather than inferring from shapes.

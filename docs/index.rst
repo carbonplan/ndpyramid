@@ -18,6 +18,7 @@ A small utility for generating ND array pyramids using Xarray and Zarr.
     :caption: Usage
 
     Examples <gallery>
+    Extent Aware Pyramids <extent-aware>
 
 
 .. toctree::

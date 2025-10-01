@@ -1,5 +1,6 @@
 from __future__ import annotations  # noqa: F401
 
+import contextlib
 from collections import defaultdict
 from collections.abc import Sequence
 from typing import cast
@@ -283,11 +284,9 @@ def pyramid_reproject(
 
         def _infer_source_bbox() -> tuple[float, float, float, float]:
             # Try odc.geobox extent first if present (more robust than coord min/max)
-            try:
+            with contextlib.suppress(Exception):
                 geobox = ds.odc.geobox  # type: ignore[attr-defined]
                 return geobox.boundingbox.bbox
-            except Exception:  # pragma: no cover - fallback path
-                pass
             if {"x", "y"}.issubset(ds.coords):
                 return (
                     float(ds.x.min()),
@@ -305,7 +304,7 @@ def pyramid_reproject(
                 raise ValueError(
                     "Dataset missing 'spatial_ref' so source CRS unknown for extent inference."
                 )
-            source_crs_wkt = str(ds.spatial_ref)
+            source_crs_wkt = ds.spatial_ref.attrs["crs_wkt"]
             source_crs = PyCRS.from_string(source_crs_wkt)
             xmin_s, ymin_s, xmax_s, ymax_s = _infer_source_bbox()
             if source_crs == target_crs:
