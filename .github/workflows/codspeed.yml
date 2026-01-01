@@ -27,7 +27,7 @@ jobs:
           locked: false
 
       - name: Run benchmarks
-        uses: CodSpeedHQ/action@v4.4.1
+        uses: CodSpeedHQ/action@v4.5.1
         with:
           run: |
             pixi run -e py313 -m pytest --codspeed
