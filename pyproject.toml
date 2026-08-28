@@ -201,11 +201,17 @@
     tests = { cmd = "pytest" }
 
 [tool.pixi.dependencies]
+    cf-xarray  = ">=0.10.7,<0.11"
     distributed = ">=2025.7.0,<2026"
     netcdf4     = ">=1.7.2,<2"
+    odc-geo     = ">=0.5.0rc1,<0.6"
+    pydantic    = ">=2.11.7,<3"
+    pyarrow     = ">=21.0.0,<22"
     pooch       = ">=1.8.2,<2"
     pyproj      = ">=3.7.2,<4"
     pyresample  = ">=1.34.2,<2"
     rasterio    = ">=1.4.3,<2"
     rioxarray   = ">=0.19.0,<0.20"
+    xarray      = ">=2025.8.0,<2026"
     xesmf       = ">=0.8.7,<0.9"
+    zarr        = ">=3.1.2,<4"
